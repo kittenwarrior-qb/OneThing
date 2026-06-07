@@ -23,3 +23,5 @@ npm run build
 - Local JSON data in browser storage, with export/import backup
 - Gacha Vault that mints one collectible card per completed lesson
 - Basic anti-farming: a lesson can only mint one reward card
+- Light/dark theme toggle and Vietnamese/English UI toggle
+- Monthly streak calendar on the Today view

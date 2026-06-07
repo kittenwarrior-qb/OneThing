@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -17,12 +16,15 @@ import {
   Gift,
   ImagePlus,
   KeyRound,
+  Languages,
   ListChecks,
+  Moon,
   Plus,
   Save,
   Settings,
   ShieldCheck,
   Sparkles,
+  Sun,
   TimerReset,
   WandSparkles,
 } from "lucide-react";
@@ -95,6 +97,7 @@ const gachaPool = [
     name: "Quiet Builder",
     rarity: "Rare",
     type: "Mindset",
+    art: "Original symbolic card",
     line: "Small wins compound.",
     flavor: "You did the boring part. That is where the real edge lives.",
     gradient: "from-emerald-300 via-teal-100 to-stone-100",
@@ -104,6 +107,7 @@ const gachaPool = [
     name: "Two Pointer Sensei",
     rarity: "Epic",
     type: "Algorithm",
+    art: "Anime-inspired abstract mentor",
     line: "Move with intent.",
     flavor: "Left and right do not wander. They squeeze the problem until it tells the truth.",
     gradient: "from-sky-300 via-cyan-100 to-white",
@@ -113,6 +117,7 @@ const gachaPool = [
     name: "Einstein Note",
     rarity: "Legend",
     type: "Physics",
+    art: "Science legend homage",
     line: "Simplify, then verify.",
     flavor: "A clean thought still needs evidence. Write the proof, not the vibe.",
     gradient: "from-amber-300 via-yellow-100 to-stone-50",
@@ -122,6 +127,7 @@ const gachaPool = [
     name: "Comeback Proof",
     rarity: "Rare",
     type: "Identity",
+    art: "Return arc card",
     line: "Returned before the loop won.",
     flavor: "Missing once is data. Returning is character.",
     gradient: "from-rose-300 via-orange-100 to-white",
@@ -131,6 +137,7 @@ const gachaPool = [
     name: "Oi Oi Oi",
     rarity: "Common",
     type: "Meme",
+    art: "Meme energy card",
     line: "Back to task.",
     flavor: "The distraction tried to be funny. You were funnier.",
     gradient: "from-violet-300 via-fuchsia-100 to-white",
@@ -140,6 +147,7 @@ const gachaPool = [
     name: "Power Contract",
     rarity: "Epic",
     type: "Heroic",
+    art: "Original hero card",
     line: "Power needs practice.",
     flavor: "No origin story today. Just one completed checkbox.",
     gradient: "from-red-300 via-orange-100 to-stone-50",
@@ -148,11 +156,101 @@ const gachaPool = [
 
 const navTabs = [
   { key: "today", label: "Today", icon: <ListChecks size={16} /> },
-  { key: "focus", label: "Focus", icon: <TimerReset size={16} /> },
   { key: "paths", label: "Paths", icon: <BookOpen size={16} /> },
   { key: "vault", label: "Vault", icon: <Gift size={16} /> },
   { key: "settings", label: "Settings", icon: <Settings size={16} /> },
 ];
+
+const copy = {
+  en: {
+    rescue: "personal rescue system",
+    mainQuest: "Main Quest today",
+    startFocus: "Start focus",
+    openGacha: "Open gacha card",
+    minted: "Reward already minted",
+    finishFirst: "Finish checklist first",
+    askGemini: "Ask Gemini",
+    focusSession: "focus session",
+    focusNote: "Use this as the launch pad. Start here, study in your real tools, then come back to tick.",
+    distractionPlaceholder: "Example: wanted YouTube because the problem felt hard.",
+    streak: "monthly streak",
+    days: "days",
+    streakHint: "A day counts only after a lesson is completed and a card is minted.",
+    allowedTools: "allowed tools",
+    allowedTitle: "Use the web for real study",
+    addPath: "add path",
+    pathTitle: "Book, course, or challenge",
+    pathName: "Path name, e.g. 200 LeetCode Challenges",
+    source: "Source, e.g. Alex Xu / CodingInterviewPatterns",
+    cover: "Cover image URL, optional",
+    toc: "Paste table of contents here.\nOne chapter/topic per line.",
+    createPath: "Create path",
+    vault: "gacha vault",
+    collect: "Collect cards, not excuses.",
+    vaultHint: "One completed lesson can mint exactly one card. Reticking today's checklist will not create another reward.",
+    pull: "Pull one card",
+    noPull: "No pull available",
+    noCards: "No cards yet. Finish today's checklist to pull your first one.",
+    pipeline: "card pipeline",
+    pipelineBody: "Current cards are local originals: rarity + type + art tag + line + flavor text. No meme image API is called yet.",
+    quoteNote: "Famous quotes should come from a verified quote pack or AI output marked as unverified.",
+    gemini: "gemini",
+    taskCoach: "Task coach key",
+    apiKey: "API key",
+    model: "Model",
+    keyHint: "Key is stored only in this browser's localStorage for now. Do not use this on a shared machine.",
+    backup: "backup",
+    backupTitle: "Do not lose the data",
+    backupHint: "LocalStorage is enough for MVP, but browser cleanup can wipe it. Export JSON after serious progress.",
+    exportJson: "Export JSON",
+    importJson: "Import JSON",
+    antiCheat: "A real anti-cheat system needs backend auth. This local version prevents accidental farming, not devtools tampering.",
+  },
+  vi: {
+    rescue: "hệ thống cứu focus cá nhân",
+    mainQuest: "Nhiệm vụ chính hôm nay",
+    startFocus: "Bắt đầu focus",
+    openGacha: "Mở thẻ gacha",
+    minted: "Đã nhận quà rồi",
+    finishFirst: "Tick xong checklist trước",
+    askGemini: "Hỏi Gemini",
+    focusSession: "phiên focus",
+    focusNote: "Dùng đây làm trạm xuất phát. Bắt đầu ở đây, học bằng công cụ thật, rồi quay lại tick.",
+    distractionPlaceholder: "Ví dụ: muốn mở YouTube vì bài khó.",
+    streak: "streak trong tháng",
+    days: "ngày",
+    streakHint: "Một ngày chỉ được tính sau khi hoàn thành lesson và mint thẻ.",
+    allowedTools: "công cụ được phép",
+    allowedTitle: "Được dùng web để học thật",
+    addPath: "thêm path",
+    pathTitle: "Sách, khóa học, hoặc challenge",
+    pathName: "Tên path, ví dụ 200 LeetCode Challenges",
+    source: "Nguồn, ví dụ Alex Xu / CodingInterviewPatterns",
+    cover: "URL ảnh bìa, không bắt buộc",
+    toc: "Dán mục lục ở đây.\nMỗi chương/topic một dòng.",
+    createPath: "Tạo path",
+    vault: "kho gacha",
+    collect: "Sưu tầm thẻ, không sưu tầm lý do.",
+    vaultHint: "Mỗi lesson hoàn thành chỉ mint đúng một thẻ. Tick lại checklist hôm nay không tạo thêm quà.",
+    pull: "Rút một thẻ",
+    noPull: "Chưa có lượt rút",
+    noCards: "Chưa có thẻ. Hoàn thành checklist hôm nay để rút thẻ đầu tiên.",
+    pipeline: "logic tạo thẻ",
+    pipelineBody: "Hiện tại thẻ là pool local tự thiết kế: rarity + type + art tag + câu ngắn + flavor text. Chưa call API lấy hình meme.",
+    quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify, hoặc AI tạo thì đánh dấu là chưa kiểm chứng.",
+    gemini: "gemini",
+    taskCoach: "Key cho task coach",
+    apiKey: "API key",
+    model: "Model",
+    keyHint: "Key hiện chỉ lưu trong localStorage của browser này. Đừng dùng trên máy chung.",
+    backup: "sao lưu",
+    backupTitle: "Đừng để mất dữ liệu",
+    backupHint: "LocalStorage đủ cho MVP, nhưng dọn browser có thể mất. Học nghiêm túc thì export JSON định kỳ.",
+    exportJson: "Export JSON",
+    importJson: "Import JSON",
+    antiCheat: "Chống ăn gian thật cần backend auth. Bản local này chống farm vô tình, không chống sửa devtools.",
+  },
+};
 
 function createDefaultState() {
   const firstLesson = defaultPaths[0].lessons[0];
@@ -162,6 +260,8 @@ function createDefaultState() {
       geminiKey: "",
       geminiModel: "gemini-2.5-flash",
       dailyMinutes: 70,
+      language: "en",
+      theme: "light",
     },
     paths: defaultPaths,
     today: {
@@ -184,6 +284,10 @@ function loadState() {
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
     if (parsed.version !== 2) return createDefaultState();
+    parsed.settings = {
+      ...createDefaultState().settings,
+      ...parsed.settings,
+    };
     if (parsed.today.date !== todayKey()) {
       return {
         ...parsed,
@@ -226,10 +330,16 @@ function App() {
   });
   const [aiStatus, setAiStatus] = useState("");
   const importRef = useRef(null);
+  const lang = state.settings.language || "en";
+  const t = copy[lang];
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = state.settings.theme || "light";
+  }, [state.settings.theme]);
 
   const activePath = state.paths.find((path) => path.id === state.today.pathId) || state.paths[0];
   const activeLesson =
@@ -240,12 +350,19 @@ function App() {
   const isComplete = checks.length > 0 && completedCount === checks.length;
   const canClaim = isComplete && !state.today.rewardId;
   const streak = computeStreak(state.history);
+  const monthDays = getMonthDays(state.history);
 
   const focusCopy = useMemo(() => {
-    if (!activeLesson) return "Create a path first.";
-    if (isComplete) return "Enough for today. Claim the card once, then stop farming the app.";
-    return "Do the next checkbox in your real study tool, then come back here to mark it.";
-  }, [activeLesson, isComplete]);
+    if (!activeLesson) return lang === "vi" ? "Tạo path đầu tiên trước." : "Create a path first.";
+    if (isComplete) {
+      return lang === "vi"
+        ? "Đủ cho hôm nay. Nhận thẻ một lần rồi dừng farm app."
+        : "Enough for today. Claim the card once, then stop farming the app.";
+    }
+    return lang === "vi"
+      ? "Làm checkbox tiếp theo trong công cụ học thật, rồi quay lại tick."
+      : "Do the next checkbox in your real study tool, then come back here to mark it.";
+  }, [activeLesson, isComplete, lang]);
 
   const updateState = (updater) => setState((current) => updater(structuredClone(current)));
 
@@ -395,16 +512,44 @@ function App() {
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between py-3">
+        <header className="app-header py-3">
           <div>
-            <p className="mono-label text-[var(--rust)]">personal rescue system</p>
+            <p className="mono-label text-[var(--rust)]">{t.rescue}</p>
             <h1 className="serif-title text-3xl font-semibold leading-none sm:text-4xl">OneThing</h1>
           </div>
-          <Badge content={canClaim ? "1" : ""} color="danger" shape="circle" isInvisible={!canClaim}>
-            <Button isIconOnly variant="flat" radius="full" className="bg-white/80" onPress={claimReward}>
+          <div className="quick-actions">
+            <button
+              className="quick-button"
+              type="button"
+              aria-label="Toggle theme"
+              onClick={() =>
+                updateState((draft) => {
+                  draft.settings.theme = draft.settings.theme === "dark" ? "light" : "dark";
+                  return draft;
+                })
+              }
+            >
+              {state.settings.theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+            <button
+              className="quick-button quick-button-text"
+              type="button"
+              aria-label="Toggle language"
+              onClick={() =>
+                updateState((draft) => {
+                  draft.settings.language = draft.settings.language === "vi" ? "en" : "vi";
+                  return draft;
+                })
+              }
+            >
+              <Languages size={16} />
+              {lang === "vi" ? "VI" : "EN"}
+            </button>
+            <button className="gift-button" type="button" onClick={claimReward} disabled={!canClaim}>
               <Gift size={19} />
-            </Button>
-          </Badge>
+              {canClaim && <span />}
+            </button>
+          </div>
         </header>
 
         <nav className="segmented-nav" aria-label="OneThing sections">
@@ -428,7 +573,7 @@ function App() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <Chip variant="flat" color="success" startContent={<ShieldCheck size={14} />}>
-                      Main Quest today
+                      {t.mainQuest}
                     </Chip>
                     <h2 className="serif-title mt-4 max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">
                       {activeLesson?.title || "Create your first path"}
@@ -468,9 +613,8 @@ function App() {
                     size="lg"
                     radius="full"
                     startContent={<TimerReset size={18} />}
-                    onPress={() => setActiveTab("focus")}
                   >
-                    Start {activeLesson?.minutes || state.settings.dailyMinutes} min focus
+                    {t.startFocus} {activeLesson?.minutes || state.settings.dailyMinutes}m
                   </Button>
                   <Button
                     size="lg"
@@ -481,7 +625,7 @@ function App() {
                     isDisabled={!canClaim}
                     onPress={claimReward}
                   >
-                    {canClaim ? "Open gacha card" : state.today.rewardId ? "Reward already minted" : "Finish checklist first"}
+                    {canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
                   </Button>
                   <Button
                     size="lg"
@@ -490,10 +634,30 @@ function App() {
                     startContent={<WandSparkles size={18} />}
                     onPress={generateLessonWithGemini}
                   >
-                    Ask Gemini
+                    {t.askGemini}
                   </Button>
                 </div>
                 {aiStatus && <p className="text-sm text-[var(--muted)]">{aiStatus}</p>}
+                <div className="focus-inline">
+                  <div>
+                    <p className="mono-label text-[var(--rust)]">{t.focusSession}</p>
+                    <h3 className="text-xl font-semibold">{activeLesson?.minutes || state.settings.dailyMinutes}:00</h3>
+                  </div>
+                  <p>{t.focusNote} {focusCopy}</p>
+                </div>
+                <textarea
+                  className="plain-textarea"
+                  rows={2}
+                  placeholder={t.distractionPlaceholder}
+                  onBlur={(event) => {
+                    if (!event.target.value.trim()) return;
+                    updateState((draft) => {
+                      draft.distractions.unshift({ at: new Date().toISOString(), text: event.target.value.trim() });
+                      return draft;
+                    });
+                    event.target.value = "";
+                  }}
+                />
               </CardContent>
             </Card>
 
@@ -505,14 +669,12 @@ function App() {
                       <Flame size={19} />
                     </div>
                     <div>
-                      <p className="mono-label">streak</p>
-                      <h3 className="text-2xl font-semibold">{streak} days</h3>
+                      <p className="mono-label">{t.streak}</p>
+                      <h3 className="text-2xl font-semibold">{streak} {t.days}</h3>
                     </div>
                   </div>
-                  <Bar value={Math.min(100, streak * 14)} tone="gold" />
-                  <p className="text-sm text-[var(--muted)]">
-                    A day counts only after a lesson is completed and a card is minted.
-                  </p>
+                  <MonthGrid days={monthDays} />
+                  <p className="text-sm text-[var(--muted)]">{t.streakHint}</p>
                 </CardContent>
               </Card>
 
@@ -523,8 +685,8 @@ function App() {
                       <Brain size={19} />
                     </div>
                     <div>
-                      <p className="mono-label">allowed tools</p>
-                      <h3 className="text-xl font-semibold">Use the web for real study</h3>
+                      <p className="mono-label">{t.allowedTools}</p>
+                      <h3 className="text-xl font-semibold">{t.allowedTitle}</h3>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -537,48 +699,6 @@ function App() {
                 </CardContent>
               </Card>
             </aside>
-          </section>
-        )}
-
-        {activeTab === "focus" && (
-          <section className="mx-auto grid w-full max-w-4xl gap-5">
-            <Card className="soft-card">
-              <CardContent className="items-center gap-6 p-8 text-center">
-                <p className="mono-label text-[var(--rust)]">focus session</p>
-                <div className="timer-face">
-                  <span>{activeLesson?.minutes || state.settings.dailyMinutes}:00</span>
-                </div>
-                <h2 className="serif-title max-w-xl text-3xl font-semibold">{activeLesson?.title}</h2>
-                <p className="max-w-lg text-[var(--muted)]">{focusCopy}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="soft-card">
-              <CardContent className="gap-4 p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="mono-label">distraction log</p>
-                    <h3 className="text-xl font-semibold">Write it down, then return</h3>
-                  </div>
-                  <Button variant="flat" radius="full" startContent={<Check size={16} />}>
-                    Stayed inside tools
-                  </Button>
-                </div>
-                <textarea
-                  className="plain-textarea"
-                  rows={3}
-                  placeholder="Example: wanted YouTube because the problem felt hard."
-                  onBlur={(event) => {
-                    if (!event.target.value.trim()) return;
-                    updateState((draft) => {
-                      draft.distractions.unshift({ at: new Date().toISOString(), text: event.target.value.trim() });
-                      return draft;
-                    });
-                    event.target.value = "";
-                  }}
-                />
-              </CardContent>
-            </Card>
           </section>
         )}
 
@@ -628,35 +748,35 @@ function App() {
 
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">add path</p>
-                <h2 className="serif-title text-3xl font-semibold">Book, course, or challenge</h2>
+                <p className="mono-label text-[var(--rust)]">{t.addPath}</p>
+                <h2 className="serif-title text-3xl font-semibold">{t.pathTitle}</h2>
                 <input
                   className="plain-input"
-                  placeholder="Path name, e.g. 200 LeetCode Challenges"
+                  placeholder={t.pathName}
                   value={newPath.title}
                   onChange={(event) => setNewPath({ ...newPath, title: event.target.value })}
                 />
                 <input
                   className="plain-input"
-                  placeholder="Source, e.g. Alex Xu / CodingInterviewPatterns"
+                  placeholder={t.source}
                   value={newPath.source}
                   onChange={(event) => setNewPath({ ...newPath, source: event.target.value })}
                 />
                 <input
                   className="plain-input"
-                  placeholder="Cover image URL, optional"
+                  placeholder={t.cover}
                   value={newPath.imageUrl}
                   onChange={(event) => setNewPath({ ...newPath, imageUrl: event.target.value })}
                 />
                 <textarea
                   className="plain-textarea"
                   rows={8}
-                  placeholder={"Paste table of contents here.\nOne chapter/topic per line."}
+                  placeholder={t.toc}
                   value={newPath.toc}
                   onChange={(event) => setNewPath({ ...newPath, toc: event.target.value })}
                 />
                 <Button color="success" radius="full" startContent={<Plus size={17} />} onPress={addPath}>
-                  Create path
+                  {t.createPath}
                 </Button>
               </CardContent>
             </Card>
@@ -667,11 +787,9 @@ function App() {
           <section className="grid gap-5 lg:grid-cols-[.78fr_1.22fr]">
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">gacha vault</p>
-                <h2 className="serif-title text-4xl font-semibold">Collect cards, not excuses.</h2>
-                <p className="text-[var(--muted)]">
-                  One completed lesson can mint exactly one card. Reticking today's checklist will not create another reward.
-                </p>
+                <p className="mono-label text-[var(--rust)]">{t.vault}</p>
+                <h2 className="serif-title text-4xl font-semibold">{t.collect}</h2>
+                <p className="text-[var(--muted)]">{t.vaultHint}</p>
                 <Button
                   color="warning"
                   radius="full"
@@ -679,8 +797,14 @@ function App() {
                   isDisabled={!canClaim}
                   onPress={claimReward}
                 >
-                  {canClaim ? "Pull one card" : "No pull available"}
+                  {canClaim ? t.pull : t.noPull}
                 </Button>
+                <Separator />
+                <div>
+                  <p className="mono-label">{t.pipeline}</p>
+                  <p className="mt-2 text-sm text-[var(--muted)]">{t.pipelineBody}</p>
+                  <p className="mt-2 text-sm text-[var(--muted)]">{t.quoteNote}</p>
+                </div>
               </CardContent>
             </Card>
 
@@ -689,7 +813,7 @@ function App() {
                 {state.collection.length === 0 && (
                   <Card className="soft-card">
                     <CardContent className="p-6">
-                      <p className="text-[var(--muted)]">No cards yet. Finish today's checklist to pull your first one.</p>
+                      <p className="text-[var(--muted)]">{t.noCards}</p>
                     </CardContent>
                   </Card>
                 )}
@@ -705,9 +829,9 @@ function App() {
           <section className="grid gap-5 lg:grid-cols-2">
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">gemini</p>
-                <h2 className="serif-title text-3xl font-semibold">Task coach key</h2>
-                <label className="field-label">API key</label>
+                <p className="mono-label text-[var(--rust)]">{t.gemini}</p>
+                <h2 className="serif-title text-3xl font-semibold">{t.taskCoach}</h2>
+                <label className="field-label">{t.apiKey}</label>
                 <input
                   className="plain-input"
                   type="password"
@@ -720,7 +844,7 @@ function App() {
                     })
                   }
                 />
-                <label className="field-label">Model</label>
+                <label className="field-label">{t.model}</label>
                 <input
                   className="plain-input"
                   value={state.settings.geminiModel}
@@ -732,24 +856,22 @@ function App() {
                   }
                 />
                 <p className="text-sm text-[var(--muted)]">
-                  Key is stored only in this browser's localStorage for now. Do not use this on a shared machine.
+                  {t.keyHint}
                 </p>
               </CardContent>
             </Card>
 
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">backup</p>
-                <h2 className="serif-title text-3xl font-semibold">Do not lose the data</h2>
-                <p className="text-[var(--muted)]">
-                  LocalStorage is enough for MVP, but browser cleanup can wipe it. Export JSON after serious progress.
-                </p>
+                <p className="mono-label text-[var(--rust)]">{t.backup}</p>
+                <h2 className="serif-title text-3xl font-semibold">{t.backupTitle}</h2>
+                <p className="text-[var(--muted)]">{t.backupHint}</p>
                 <div className="flex flex-wrap gap-3">
                   <Button color="success" radius="full" startContent={<Save size={17} />} onPress={exportJson}>
-                    Export JSON
+                    {t.exportJson}
                   </Button>
                   <Button radius="full" variant="flat" startContent={<ImagePlus size={17} />} onPress={() => importRef.current?.click()}>
-                    Import JSON
+                    {t.importJson}
                   </Button>
                 </div>
                 <input ref={importRef} type="file" accept="application/json" hidden onChange={importJson} />
@@ -759,7 +881,7 @@ function App() {
                     <KeyRound size={19} />
                   </div>
                   <p className="text-sm text-[var(--muted)]">
-                    A real anti-cheat system needs backend auth. This local version prevents accidental farming, not devtools tampering.
+                    {t.antiCheat}
                   </p>
                 </div>
               </CardContent>
@@ -803,6 +925,7 @@ function CollectibleCard({ card }) {
       </div>
       <div>
         <h3>{card.name}</h3>
+        <p className="collect-art-tag">{card.art}</p>
         <p className="collect-line">{card.line}</p>
         <p className="collect-flavor">{card.flavor}</p>
       </div>
@@ -815,6 +938,18 @@ function Bar({ value, tone = "primary" }) {
   return (
     <div className="bar-track" data-tone={tone}>
       <span style={{ width: `${value}%` }} />
+    </div>
+  );
+}
+
+function MonthGrid({ days }) {
+  return (
+    <div className="month-grid" aria-label="Monthly streak">
+      {days.map((day) => (
+        <div className={day.completed ? "month-day month-day-done" : "month-day"} key={day.key}>
+          <span>{day.day}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -847,6 +982,19 @@ function computeStreak(history) {
     cursor.setDate(cursor.getDate() - 1);
   }
   return count;
+}
+
+function getMonthDays(history) {
+  const completedDays = new Set(Object.values(history).map((item) => item.completedAt?.slice(0, 10)).filter(Boolean));
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const total = new Date(year, month + 1, 0).getDate();
+  return Array.from({ length: total }, (_, index) => {
+    const date = new Date(year, month, index + 1);
+    const key = date.toISOString().slice(0, 10);
+    return { key, day: index + 1, completed: completedDays.has(key) };
+  });
 }
 
 function drawCard() {
