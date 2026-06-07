@@ -91,68 +91,125 @@ const defaultPaths = [
   },
 ];
 
-const gachaPool = [
+const rarityTable = [
+  { rarity: "Common", weight: 58 },
+  { rarity: "Rare", weight: 28 },
+  { rarity: "Epic", weight: 11 },
+  { rarity: "Legend", weight: 3 },
+];
+
+const cardArchetypes = [
   {
     id: "quiet-builder",
     name: "Quiet Builder",
-    rarity: "Rare",
     type: "Mindset",
+    allowedRarities: ["Common", "Rare"],
     art: "Original symbolic card",
-    line: "Small wins compound.",
-    flavor: "You did the boring part. That is where the real edge lives.",
+    visualPrompt: "minimal trading card art, calm builder silhouette, warm desk light, no copyrighted character",
     gradient: "from-emerald-300 via-teal-100 to-stone-100",
   },
   {
     id: "two-pointer-sensei",
     name: "Two Pointer Sensei",
-    rarity: "Epic",
     type: "Algorithm",
+    allowedRarities: ["Rare", "Epic"],
     art: "Anime-inspired abstract mentor",
-    line: "Move with intent.",
-    flavor: "Left and right do not wander. They squeeze the problem until it tells the truth.",
+    visualPrompt: "original anime-inspired mentor with two glowing pointer trails, algorithm card, no existing IP",
     gradient: "from-sky-300 via-cyan-100 to-white",
   },
   {
     id: "einstein-note",
     name: "Einstein Note",
-    rarity: "Legend",
     type: "Physics",
+    allowedRarities: ["Epic", "Legend"],
     art: "Science legend homage",
-    line: "Simplify, then verify.",
-    flavor: "A clean thought still needs evidence. Write the proof, not the vibe.",
+    visualPrompt: "abstract chalkboard physics card with wild hair silhouette, homage not portrait, no real likeness",
     gradient: "from-amber-300 via-yellow-100 to-stone-50",
   },
   {
     id: "comeback-card",
     name: "Comeback Proof",
-    rarity: "Rare",
     type: "Identity",
+    allowedRarities: ["Common", "Rare", "Epic"],
     art: "Return arc card",
-    line: "Returned before the loop won.",
-    flavor: "Missing once is data. Returning is character.",
+    visualPrompt: "heroic comeback trading card, doorway of light, original character, no existing IP",
     gradient: "from-rose-300 via-orange-100 to-white",
   },
   {
     id: "meme-energy",
     name: "Oi Oi Oi",
-    rarity: "Common",
     type: "Meme",
+    allowedRarities: ["Common", "Rare"],
     art: "Meme energy card",
-    line: "Back to task.",
-    flavor: "The distraction tried to be funny. You were funnier.",
+    visualPrompt: "absurd original meme card, bold reaction pose, playful, no copyrighted meme image",
     gradient: "from-violet-300 via-fuchsia-100 to-white",
   },
   {
     id: "power-card",
     name: "Power Contract",
-    rarity: "Epic",
     type: "Heroic",
+    allowedRarities: ["Rare", "Epic", "Legend"],
     art: "Original hero card",
-    line: "Power needs practice.",
-    flavor: "No origin story today. Just one completed checkbox.",
+    visualPrompt: "original superhero-inspired trading card, dramatic cape silhouette, no Marvel or DC character",
     gradient: "from-red-300 via-orange-100 to-stone-50",
   },
 ];
+
+const linePacks = {
+  Common: [
+    { line: "Back to task.", source: "Original OneThing line", verified: true },
+    { line: "Small wins compound.", source: "Original OneThing line", verified: true },
+    { line: "Show up before you feel ready.", source: "Original OneThing line", verified: true },
+  ],
+  Rare: [
+    { line: "Returned before the loop won.", source: "Original OneThing line", verified: true },
+    { line: "Move with intent.", source: "Original OneThing line", verified: true },
+    { line: "You do not need momentum to begin.", source: "Original OneThing line", verified: true },
+  ],
+  Epic: [
+    { line: "Power needs practice.", source: "Original OneThing line", verified: true },
+    { line: "Simplify, then verify.", source: "Original OneThing line", verified: true },
+    { line: "The pattern is the reward for noticing.", source: "Original OneThing line", verified: true },
+  ],
+  Legend: [
+    { line: "The future version of you remembers this pull.", source: "Original OneThing line", verified: true },
+    { line: "A clean thought still needs evidence.", source: "Original OneThing line", verified: true },
+  ],
+};
+
+const flavorPacks = {
+  Mindset: [
+    "You did the boring part. That is where the real edge lives.",
+    "No fireworks. Just proof that you can return.",
+  ],
+  Algorithm: [
+    "Left and right do not wander. They squeeze the problem until it tells the truth.",
+    "A pattern is a shortcut you earned by paying attention.",
+  ],
+  Physics: [
+    "Write the proof, not the vibe.",
+    "The universe respects clarity. Interviews do too.",
+  ],
+  Identity: [
+    "Missing once is data. Returning is character.",
+    "This card exists because you did not negotiate with the old loop.",
+  ],
+  Meme: [
+    "The distraction tried to be funny. You were funnier.",
+    "A very serious card for a very unserious urge to procrastinate.",
+  ],
+  Heroic: [
+    "No origin story today. Just one completed checkbox.",
+    "Great power, tiny checklist.",
+  ],
+};
+
+const raritySerialPrefix = {
+  Common: "C",
+  Rare: "R",
+  Epic: "E",
+  Legend: "L",
+};
 
 const navTabs = [
   { key: "today", label: "Today", icon: <ListChecks size={16} /> },
@@ -192,8 +249,8 @@ const copy = {
     noPull: "No pull available",
     noCards: "No cards yet. Finish today's checklist to pull your first one.",
     pipeline: "card pipeline",
-    pipelineBody: "Current cards are local originals: rarity + type + art tag + line + flavor text. No meme image API is called yet.",
-    quoteNote: "Famous quotes should come from a verified quote pack or AI output marked as unverified.",
+    pipelineBody: "Current cards are assembled locally: weighted rarity -> matching archetype -> verified OneThing line -> flavor text -> art prompt. No meme image API is called yet.",
+    quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
     gemini: "gemini",
     taskCoach: "Task coach key",
     apiKey: "API key",
@@ -236,8 +293,8 @@ const copy = {
     noPull: "Chưa có lượt rút",
     noCards: "Chưa có thẻ. Hoàn thành checklist hôm nay để rút thẻ đầu tiên.",
     pipeline: "logic tạo thẻ",
-    pipelineBody: "Hiện tại thẻ là pool local tự thiết kế: rarity + type + art tag + câu ngắn + flavor text. Chưa call API lấy hình meme.",
-    quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify, hoặc AI tạo thì đánh dấu là chưa kiểm chứng.",
+    pipelineBody: "Hiện tại thẻ được lắp local: roll rarity theo tỉ lệ -> chọn archetype hợp rarity -> lấy câu OneThing đã verify -> flavor text -> art prompt. Chưa call API lấy hình meme.",
+    quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
     gemini: "gemini",
     taskCoach: "Key cho task coach",
     apiKey: "API key",
@@ -917,7 +974,7 @@ function CollectibleCard({ card }) {
   return (
     <article className={`collect-card bg-gradient-to-br ${card.gradient}`}>
       <div className="collect-card-top">
-        <span>{card.rarity}</span>
+        <span>{card.serial || card.rarity}</span>
         <span>{card.type}</span>
       </div>
       <div className="collect-card-art">
@@ -929,6 +986,11 @@ function CollectibleCard({ card }) {
         <p className="collect-line">{card.line}</p>
         <p className="collect-flavor">{card.flavor}</p>
       </div>
+      <div className="collect-meta">
+        <span>{card.lineSource || "Original OneThing line"}</span>
+        <span>{card.verified ? "verified" : "unverified"}</span>
+      </div>
+      {card.visualPrompt && <p className="collect-prompt">{card.visualPrompt}</p>}
       <div className="collect-card-foot">from {card.sourceLessonTitle}</div>
     </article>
   );
@@ -998,14 +1060,52 @@ function getMonthDays(history) {
 }
 
 function drawCard() {
-  const weights = { Common: 58, Rare: 28, Epic: 11, Legend: 3 };
-  const total = gachaPool.reduce((sum, card) => sum + weights[card.rarity], 0);
+  const rarity = weightedPick(rarityTable).rarity;
+  const archetype = pickOne(cardArchetypes.filter((card) => card.allowedRarities.includes(rarity))) || cardArchetypes[0];
+  const line = pickOne(linePacks[rarity]) || linePacks.Common[0];
+  const flavor = pickOne(flavorPacks[archetype.type]) || "You completed the task, so this card exists.";
+  return {
+    id: `${archetype.id}-${rarity.toLowerCase()}`,
+    name: archetype.name,
+    rarity,
+    type: archetype.type,
+    art: archetype.art,
+    visualPrompt: archetype.visualPrompt,
+    line: line.line,
+    lineSource: line.source,
+    verified: line.verified,
+    flavor,
+    gradient: archetype.gradient,
+    serial: createSerial(rarity),
+    pipeline: {
+      raritySource: "weighted local roll",
+      archetypeSource: "local archetype pack",
+      lineSource: line.source,
+      flavorSource: "local flavor pack",
+      artSource: "local prompt, no image API",
+    },
+  };
+}
+
+function weightedPick(items) {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * total;
-  for (const card of gachaPool) {
-    roll -= weights[card.rarity];
-    if (roll <= 0) return card;
+  for (const item of items) {
+    roll -= item.weight;
+    if (roll <= 0) return item;
   }
-  return gachaPool[0];
+  return items[0];
+}
+
+function pickOne(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function createSerial(rarity) {
+  const prefix = raritySerialPrefix[rarity] || "C";
+  const stamp = Date.now().toString(36).toUpperCase().slice(-5);
+  const roll = Math.random().toString(36).toUpperCase().slice(2, 5);
+  return `${prefix}-${stamp}-${roll}`;
 }
 
 function createId(prefix) {

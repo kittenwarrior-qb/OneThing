@@ -433,6 +433,35 @@ body {
   line-height: 1.5;
 }
 
+.collect-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.collect-meta span {
+  border: 1px solid rgba(33, 31, 25, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  padding: 4px 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.collect-prompt {
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 0;
+  color: rgba(33, 31, 25, 0.64);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .timer-face {
   display: grid;
   width: min(68vw, 320px);
