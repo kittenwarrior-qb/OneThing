@@ -17,8 +17,9 @@ npm run build
 
 ## Current prototype
 
-- Today page with a single Main Quest
-- Micro-task checkboxes for dopamine-friendly progress
-- Focus timer screen with allowed tools
-- Learning paths for English, IELTS, LeetCode, System Design, and Design Patterns
-- Secret reward Vault that unlocks after real completion
+- Today page with one Main Quest and concrete micro-checks
+- Learning paths built from books, courses, challenges, or pasted table of contents
+- Settings page for a Gemini API key and model name
+- Local JSON data in browser storage, with export/import backup
+- Gacha Vault that mints one collectible card per completed lesson
+- Basic anti-farming: a lesson can only mint one reward card

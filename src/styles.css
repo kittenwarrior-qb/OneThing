@@ -47,10 +47,10 @@ body {
   top: 12px;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   margin-bottom: 20px;
   border: 1px solid rgba(222, 213, 195, 0.7);
   border-radius: 999px;
@@ -99,7 +99,9 @@ body {
   font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .task-row:hover {
@@ -110,6 +112,36 @@ body {
 .task-row-done {
   border-color: rgba(16, 185, 129, 0.42);
   background: rgba(220, 237, 230, 0.72);
+  box-shadow: 0 12px 34px rgba(16, 185, 129, 0.13);
+}
+
+.task-row-done::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0 40%, rgba(255, 255, 255, 0.62) 50%, transparent 60% 100%);
+  transform: translateX(120%);
+  animation: task-shine 520ms ease;
+  pointer-events: none;
+}
+
+.task-pop {
+  animation: task-pop 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes task-pop {
+  50% {
+    transform: scale(1.015);
+  }
+}
+
+@keyframes task-shine {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
 }
 
 .icon-bubble {
@@ -163,6 +195,154 @@ body {
 
 .bar-track[data-tone="primary"] span {
   background: #3b82f6;
+}
+
+.plain-input,
+.plain-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.82);
+  padding: 13px 15px;
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.plain-input:focus,
+.plain-textarea:focus {
+  border-color: rgba(189, 75, 46, 0.45);
+  box-shadow: 0 0 0 4px rgba(189, 75, 46, 0.1);
+}
+
+.plain-textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.55;
+}
+
+.field-label {
+  margin-bottom: -8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.path-cover {
+  width: 78px;
+  height: 104px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 10px 28px rgba(72, 55, 32, 0.12);
+}
+
+.path-cover-empty {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(189, 75, 46, 0.18), transparent),
+    var(--cream);
+  color: var(--rust);
+}
+
+.lesson-row {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.72);
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.lesson-row:hover {
+  transform: translateY(-1px);
+  border-color: #c8bda8;
+}
+
+.collect-card {
+  position: relative;
+  display: flex;
+  min-height: 330px;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgba(33, 31, 25, 0.18);
+  border-radius: 22px;
+  padding: 18px;
+  color: #211f19;
+  box-shadow: 0 24px 70px rgba(72, 55, 32, 0.16);
+}
+
+.collect-card::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(33, 31, 25, 0.16);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.collect-card-top,
+.collect-card-foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.collect-card-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 120px;
+  height: 120px;
+  place-items: center;
+  align-self: center;
+  border: 1px solid rgba(33, 31, 25, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.22);
+}
+
+.collect-card h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 600;
+}
+
+.collect-line {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+.collect-flavor {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: rgba(33, 31, 25, 0.72);
+  line-height: 1.5;
 }
 
 .timer-face {
