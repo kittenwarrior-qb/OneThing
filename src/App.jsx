@@ -8,8 +8,6 @@ import {
   Chip,
   ScrollShadow,
   Separator,
-  Tabs,
-  Tab,
   TextArea,
 } from "@heroui/react";
 import {
@@ -57,6 +55,13 @@ const secretRewards = [
   },
 ];
 
+const navTabs = [
+  { key: "today", label: "Today", icon: <ListChecks size={16} /> },
+  { key: "focus", label: "Focus", icon: <TimerReset size={16} /> },
+  { key: "paths", label: "Paths", icon: <BookOpen size={16} /> },
+  { key: "vault", label: "Vault", icon: <Gift size={16} /> },
+];
+
 function App() {
   const [activeTab, setActiveTab] = useState("today");
   const [checked, setChecked] = useState([false, false, false]);
@@ -98,23 +103,19 @@ function App() {
           </Badge>
         </header>
 
-        <Tabs
-          selectedKey={activeTab}
-          onSelectionChange={setActiveTab}
-          radius="full"
-          classNames={{
-            base: "sticky top-3 z-20 mb-5",
-            tabList: "w-full bg-white/70 p-1 shadow-sm backdrop-blur-xl sm:w-auto",
-            tab: "h-10 px-4",
-            cursor: "bg-[var(--ink)]",
-            tabContent: "group-data-[selected=true]:text-white",
-          }}
-        >
-          <Tab key="today" title={<TabTitle icon={<ListChecks size={16} />} label="Today" />} />
-          <Tab key="focus" title={<TabTitle icon={<TimerReset size={16} />} label="Focus" />} />
-          <Tab key="paths" title={<TabTitle icon={<BookOpen size={16} />} label="Paths" />} />
-          <Tab key="vault" title={<TabTitle icon={<Gift size={16} />} label="Vault" />} />
-        </Tabs>
+        <nav className="segmented-nav" aria-label="OneThing sections">
+          {navTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              className={activeTab === tab.key ? "segmented-item segmented-item-active" : "segmented-item"}
+              onClick={() => setActiveTab(tab.key)}
+              aria-current={activeTab === tab.key ? "page" : undefined}
+            >
+              <TabTitle icon={tab.icon} label={tab.label} />
+            </button>
+          ))}
+        </nav>
 
         {activeTab === "today" && (
           <section className="grid flex-1 gap-5 lg:grid-cols-[1.25fr_.75fr]">
