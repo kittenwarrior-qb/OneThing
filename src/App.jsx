@@ -1030,7 +1030,7 @@ function CollectibleCard({ card }) {
     <article className={`collect-card bg-gradient-to-br ${card.gradient}`}>
       <div className="collect-card-top">
         <span>{card.serial || card.rarity}</span>
-        <span>{card.type}</span>
+        <span>{card.rarity}</span>
       </div>
       <div className="collect-card-art">
         {card.imageUrl ? (
@@ -1041,19 +1041,14 @@ function CollectibleCard({ card }) {
         ) : (
           <Sparkles size={38} />
         )}
+        <div className="collect-quote">
+          <span>{card.line}</span>
+        </div>
       </div>
-      <div>
+      <div className="collect-title-strip">
         <h3>{card.name}</h3>
-        <p className="collect-art-tag">{card.art}</p>
-        <p className="collect-line">{card.line}</p>
-        <p className="collect-flavor">{card.flavor}</p>
+        <p>{card.type} · {card.imageName || card.art}</p>
       </div>
-      <div className="collect-meta">
-        <span>{card.lineSource || "Original OneThing line"}</span>
-        <span>{card.verified ? "verified" : "unverified"}</span>
-        {card.imageSource && <span>{card.imageSource}</span>}
-      </div>
-      {card.visualPrompt && <p className="collect-prompt">{card.visualPrompt}</p>}
       <div className="collect-card-foot">from {card.sourceLessonTitle}</div>
     </article>
   );
