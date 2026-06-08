@@ -137,11 +137,11 @@ const cardArchetypes = [
   },
   {
     id: "meme-energy",
-    name: "Oi Oi Oi",
-    type: "Meme",
+    name: "Modern Reaction",
+    type: "Reaction",
     allowedRarities: ["Common", "Rare"],
-    art: "Meme energy card",
-    visualPrompt: "absurd original meme card, bold reaction pose, playful, no copyrighted meme image",
+    art: "Original reaction card",
+    visualPrompt: "modern cinematic reaction meme card, expressive original character, premium lighting, no copyrighted character, no text",
     gradient: "from-violet-300 via-fuchsia-100 to-white",
   },
   {
@@ -198,6 +198,10 @@ const flavorPacks = {
     "The distraction tried to be funny. You were funnier.",
     "A very serious card for a very unserious urge to procrastinate.",
   ],
+  Reaction: [
+    "The urge to procrastinate got caught on camera.",
+    "A modern reaction for an old pattern you just beat.",
+  ],
   Heroic: [
     "No origin story today. Just one completed checkbox.",
     "Great power, tiny checklist.",
@@ -252,7 +256,7 @@ const copy = {
     previewOnly: "Preview only. This card is not saved.",
     previewEmpty: "Use Test pull to preview the generator before you earn a real card.",
     pipeline: "card pipeline",
-    pipelineBody: "Current cards are assembled locally: weighted rarity -> matching archetype -> verified OneThing line -> flavor text -> art prompt. No meme image API is called yet.",
+    pipelineBody: "Cards now use a coherent recipe: rarity -> archetype -> line -> matching art prompt -> Pollinations image URL. Random Imgflip memes are disabled.",
     quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
     openrouter: "openrouter",
     taskCoach: "Task coach key",
@@ -299,7 +303,7 @@ const copy = {
     previewOnly: "Chỉ xem thử. Thẻ này không được lưu.",
     previewEmpty: "Bấm Test rút thẻ để xem generator trước khi nhận thẻ thật.",
     pipeline: "logic tạo thẻ",
-    pipelineBody: "Hiện tại thẻ được lắp local: roll rarity theo tỉ lệ -> chọn archetype hợp rarity -> lấy câu OneThing đã verify -> flavor text -> art prompt. Chưa call API lấy hình meme.",
+    pipelineBody: "Thẻ giờ đi theo recipe nhất quán: rarity -> archetype -> line -> art prompt khớp nội dung -> ảnh Pollinations. Đã tắt random Imgflip meme.",
     quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
     openrouter: "openrouter",
     taskCoach: "Key cho task coach",
@@ -1049,7 +1053,7 @@ function CollectibleCard({ card }) {
         <h3>{card.name}</h3>
         <p>{card.type} / {card.imageName || card.art}</p>
       </div>
-      <div className="collect-card-foot">{card.sourceLessonTitle}</div>
+      <div className="collect-card-foot">ONETHING REWARD</div>
     </article>
   );
 }
@@ -1119,12 +1123,13 @@ function getMonthDays(history) {
 
 async function generateCardForLesson({ lesson, path, settings, preview }) {
   const localCard = drawCard();
-  const memeImage = await fetchMemeImage();
+  const fallbackImagePrompt = enhanceCardImagePrompt(localCard.visualPrompt, localCard.line);
   const fallback = {
     ...localCard,
-    imageUrl: memeImage?.url || "",
-    imageName: memeImage?.name || "",
-    imageSource: memeImage ? "Imgflip meme template API" : "No image source",
+    imageUrl: buildGeneratedImageUrl(fallbackImagePrompt, localCard.serial),
+    imageName: "AI reward visual",
+    imageSource: "Pollinations image API",
+    visualPrompt: fallbackImagePrompt,
     generatedBy: "local",
   };
 
@@ -1134,12 +1139,13 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     const prompt = [
       "Create one collectible study reward card recipe.",
       "Return strict JSON only with this shape:",
-      '{"name":"...","type":"Meme|Algorithm|Mindset|Heroic|Science","line":"short punchy line","flavor":"1 sentence flavor text","art":"short art tag","visualPrompt":"image prompt, no copyrighted characters","verified":false}',
-      "The card can be meme-ish, cool, philosophical, or anime-inspired, but do not claim a famous quote unless you provide exact source. Prefer original lines.",
+      '{"name":"...","type":"Reaction|Algorithm|Mindset|Heroic|Science","line":"short punchy line","flavor":"1 sentence flavor text","art":"short art tag","visualPrompt":"image prompt, no text in image, no copyrighted characters","verified":false}',
+      "The card can be meme-ish, cool, philosophical, or anime-inspired, but do not use copyrighted catchphrases or existing characters. Prefer original lines.",
       "Keep it suitable for a personal study app.",
       `Current path: ${path?.title || "Unknown"}`,
       `Current lesson: ${lesson?.title || "Preview"}`,
       `Lesson goal: ${lesson?.goal || ""}`,
+      "The visualPrompt must match the line and name. The final image should look modern, premium, high-resolution, no white caption area.",
       preview ? "This is a preview pull, not a real reward." : "This is an earned reward.",
     ].join("\n");
 
@@ -1166,6 +1172,11 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     const text = data.choices?.[0]?.message?.content || "";
     const recipe = JSON.parse(text.replace(/```json|```/g, "").trim());
 
+    const visualPrompt = enhanceCardImagePrompt(
+      String(recipe.visualPrompt || fallback.visualPrompt).slice(0, 220),
+      String(recipe.line || fallback.line).slice(0, 90),
+    );
+
     return {
       ...fallback,
       name: String(recipe.name || fallback.name).slice(0, 42),
@@ -1173,7 +1184,10 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       art: String(recipe.art || fallback.art).slice(0, 56),
       line: String(recipe.line || fallback.line).slice(0, 90),
       flavor: String(recipe.flavor || fallback.flavor).slice(0, 180),
-      visualPrompt: String(recipe.visualPrompt || fallback.visualPrompt).slice(0, 220),
+      visualPrompt,
+      imageUrl: buildGeneratedImageUrl(visualPrompt, fallback.serial),
+      imageName: "AI reward visual",
+      imageSource: "Pollinations image API",
       verified: Boolean(recipe.verified),
       lineSource: recipe.verified ? "OpenRouter generated, marked verified" : "OpenRouter generated, unverified",
       generatedBy: "openrouter",
@@ -1183,18 +1197,20 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
   }
 }
 
-async function fetchMemeImage() {
-  try {
-    const response = await fetch("https://api.imgflip.com/get_memes");
-    if (!response.ok) return null;
-    const data = await response.json();
-    const memes = data.data?.memes || [];
-    const landscapeSafe = memes.filter((meme) => meme.url && meme.width >= 400 && meme.height >= 300);
-    const chosen = pickOne(landscapeSafe.length ? landscapeSafe : memes);
-    return chosen ? { url: chosen.url, name: chosen.name } : null;
-  } catch {
-    return null;
-  }
+function enhanceCardImagePrompt(prompt, line) {
+  return [
+    prompt,
+    "premium vertical collectible trading card artwork",
+    "modern cinematic lighting, high resolution, detailed subject, rich contrast",
+    "no blank white area, no caption box, no text, no watermark",
+    `mood inspired by: ${line}`,
+  ].join(", ");
+}
+
+function buildGeneratedImageUrl(prompt, seedSource) {
+  const seed = hashSeed(seedSource || prompt);
+  const encoded = encodeURIComponent(prompt);
+  return `https://image.pollinations.ai/prompt/${encoded}?model=flux&width=768&height=1024&seed=${seed}&nologo=true&enhance=true&safe=true`;
 }
 
 function drawCard() {
@@ -1244,6 +1260,15 @@ function createSerial(rarity) {
   const stamp = Date.now().toString(36).toUpperCase().slice(-5);
   const roll = Math.random().toString(36).toUpperCase().slice(2, 5);
   return `${prefix}-${stamp}-${roll}`;
+}
+
+function hashSeed(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
 function createId(prefix) {
