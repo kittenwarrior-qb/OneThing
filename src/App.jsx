@@ -248,6 +248,9 @@ const copy = {
     pull: "Pull one card",
     noPull: "No pull available",
     noCards: "No cards yet. Finish today's checklist to pull your first one.",
+    testPull: "Test pull",
+    previewOnly: "Preview only. This card is not saved.",
+    previewEmpty: "Use Test pull to preview the generator before you earn a real card.",
     pipeline: "card pipeline",
     pipelineBody: "Current cards are assembled locally: weighted rarity -> matching archetype -> verified OneThing line -> flavor text -> art prompt. No meme image API is called yet.",
     quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
@@ -292,6 +295,9 @@ const copy = {
     pull: "Rút một thẻ",
     noPull: "Chưa có lượt rút",
     noCards: "Chưa có thẻ. Hoàn thành checklist hôm nay để rút thẻ đầu tiên.",
+    testPull: "Test rút thẻ",
+    previewOnly: "Chỉ xem thử. Thẻ này không được lưu.",
+    previewEmpty: "Bấm Test rút thẻ để xem generator trước khi nhận thẻ thật.",
     pipeline: "logic tạo thẻ",
     pipelineBody: "Hiện tại thẻ được lắp local: roll rarity theo tỉ lệ -> chọn archetype hợp rarity -> lấy câu OneThing đã verify -> flavor text -> art prompt. Chưa call API lấy hình meme.",
     quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
@@ -389,6 +395,7 @@ function App() {
     dailyMinutes: 60,
   });
   const [aiStatus, setAiStatus] = useState("");
+  const [previewCard, setPreviewCard] = useState(null);
   const importRef = useRef(null);
   const lang = state.settings.language || "en";
   const t = copy[lang];
@@ -474,6 +481,17 @@ function App() {
       return draft;
     });
     setActiveTab("vault");
+  };
+
+  const testPullCard = () => {
+    const card = drawCard();
+    setPreviewCard({
+      ...card,
+      uid: createId("preview"),
+      mintedAt: new Date().toISOString(),
+      sourceLessonId: activeLesson?.id || "preview",
+      sourceLessonTitle: activeLesson?.title || "Preview Pull",
+    });
   };
 
   const addPath = () => {
@@ -869,11 +887,23 @@ function App() {
                 >
                   {canClaim ? t.pull : t.noPull}
                 </Button>
+                <Button radius="full" variant="flat" startContent={<Gift size={18} />} onPress={testPullCard}>
+                  {t.testPull}
+                </Button>
                 <Separator />
                 <div>
                   <p className="mono-label">{t.pipeline}</p>
                   <p className="mt-2 text-sm text-[var(--muted)]">{t.pipelineBody}</p>
                   <p className="mt-2 text-sm text-[var(--muted)]">{t.quoteNote}</p>
+                </div>
+                <Separator />
+                <div className="grid gap-3">
+                  <p className="mono-label">{t.previewOnly}</p>
+                  {previewCard ? (
+                    <CollectibleCard card={previewCard} />
+                  ) : (
+                    <p className="text-sm text-[var(--muted)]">{t.previewEmpty}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
