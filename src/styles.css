@@ -352,37 +352,102 @@ body {
 .collect-card {
   position: relative;
   display: flex;
-  min-height: 520px;
+  isolation: isolate;
+  min-height: 560px;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  border: 1px solid rgba(33, 31, 25, 0.2);
-  border-radius: 18px;
-  padding: 12px;
-  color: #211f19;
-  box-shadow: 0 24px 70px rgba(72, 55, 32, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.32), transparent 26%),
+    linear-gradient(145deg, #11100e, #2a251e 48%, #0d0c0b);
+  color: #fff8e8;
+  box-shadow: 0 28px 90px rgba(24, 19, 12, 0.34);
+}
+
+.collect-card[data-rarity="Common"] {
+  --foil-a: #d6d0c4;
+  --foil-b: #857d70;
+}
+
+.collect-card[data-rarity="Rare"] {
+  --foil-a: #77f2c1;
+  --foil-b: #127a62;
+}
+
+.collect-card[data-rarity="Epic"] {
+  --foil-a: #a78bfa;
+  --foil-b: #f0abfc;
+}
+
+.collect-card[data-rarity="Legend"] {
+  --foil-a: #fcd34d;
+  --foil-b: #fb7185;
 }
 
 .collect-card::before {
   content: "";
   position: absolute;
-  inset: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 13px;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--foil-a), rgba(255, 255, 255, 0.26), var(--foil-b));
+  padding: 2px;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
   pointer-events: none;
+}
+
+.collect-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(115deg, transparent 0 34%, rgba(255, 255, 255, 0.18) 44%, transparent 54% 100%),
+    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 7px);
+  mix-blend-mode: screen;
+  opacity: 0.52;
+  pointer-events: none;
+}
+
+.collect-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: #11100e;
+}
+
+.collect-bg img {
+  width: 100%;
+  height: 100%;
+  filter: blur(24px) saturate(1.25) brightness(0.78);
+  object-fit: cover;
+  opacity: 0.72;
+  transform: scale(1.13);
 }
 
 .collect-card-top,
 .collect-card-foot {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   gap: 12px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.86);
+}
+
+.collect-card-top {
+  padding: 14px 16px 8px;
+}
+
+.collect-card-foot {
+  padding: 0 16px 16px;
 }
 
 .collect-card-art {
@@ -391,17 +456,14 @@ body {
   display: grid;
   width: 100%;
   flex: 1;
-  min-height: 360px;
+  min-height: 390px;
   place-items: center;
   align-self: center;
-  border: 1px solid rgba(33, 31, 25, 0.16);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.42);
-  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.18);
+  border-block: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.16);
   overflow: hidden;
 }
 
-.collect-card-backdrop,
 .collect-card-image {
   position: absolute;
   inset: 0;
@@ -409,28 +471,21 @@ body {
   height: 100%;
 }
 
-.collect-card-backdrop {
-  filter: blur(20px) saturate(1.18);
-  object-fit: cover;
-  opacity: 0.66;
-  transform: scale(1.18);
-}
-
 .collect-card-image {
   z-index: 1;
   object-fit: cover;
+  object-position: center;
   padding: 0;
 }
 
 .collect-quote {
   position: absolute;
   z-index: 2;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.66));
-  padding: 44px 14px 14px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+  padding: 80px 20px 20px;
   color: #fffdf8;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
@@ -444,18 +499,21 @@ body {
 
 .collect-title-strip {
   position: relative;
-  z-index: 1;
-  border: 1px solid rgba(33, 31, 25, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.46);
-  padding: 12px;
+  z-index: 3;
+  margin: 0 14px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.34);
+  padding: 12px 14px;
+  backdrop-filter: blur(14px);
 }
 
 .collect-title-strip h3 {
   margin: 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: 1.45rem;
+  font-size: 1.58rem;
   font-weight: 600;
+  color: #fff8e8;
 }
 
 .collect-title-strip p {
@@ -464,6 +522,7 @@ body {
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: rgba(255, 248, 232, 0.72);
 }
 
 .timer-face {

@@ -1027,17 +1027,17 @@ function Cover({ path }) {
 
 function CollectibleCard({ card }) {
   return (
-    <article className={`collect-card bg-gradient-to-br ${card.gradient}`}>
+    <article className="collect-card" data-rarity={card.rarity}>
+      <div className="collect-bg">
+        {card.imageUrl && <img src={card.imageUrl} alt="" />}
+      </div>
       <div className="collect-card-top">
         <span>{card.serial || card.rarity}</span>
         <span>{card.rarity}</span>
       </div>
       <div className="collect-card-art">
         {card.imageUrl ? (
-          <>
-            <img className="collect-card-backdrop" src={card.imageUrl} alt="" />
-            <img className="collect-card-image" src={card.imageUrl} alt={card.imageName || card.name} />
-          </>
+          <img className="collect-card-image" src={card.imageUrl} alt={card.imageName || card.name} />
         ) : (
           <Sparkles size={38} />
         )}
@@ -1047,9 +1047,9 @@ function CollectibleCard({ card }) {
       </div>
       <div className="collect-title-strip">
         <h3>{card.name}</h3>
-        <p>{card.type} · {card.imageName || card.art}</p>
+        <p>{card.type} / {card.imageName || card.art}</p>
       </div>
-      <div className="collect-card-foot">from {card.sourceLessonTitle}</div>
+      <div className="collect-card-foot">{card.sourceLessonTitle}</div>
     </article>
   );
 }
