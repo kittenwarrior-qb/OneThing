@@ -456,11 +456,16 @@ function App() {
     });
   };
 
-  const claimReward = () => {
+  const claimReward = async () => {
     if (!canClaim || !activeLesson) return;
     const alreadyCompleted = state.history[activeLesson.id]?.rewardId;
     if (alreadyCompleted) return;
-    const card = drawCard();
+    const card = await generateCardForLesson({
+      lesson: activeLesson,
+      path: activePath,
+      settings: state.settings,
+      preview: false,
+    });
     const mintedCard = {
       ...card,
       uid: createId("card"),
@@ -483,8 +488,14 @@ function App() {
     setActiveTab("vault");
   };
 
-  const testPullCard = () => {
-    const card = drawCard();
+  const testPullCard = async () => {
+    setAiStatus("Pulling a preview card...");
+    const card = await generateCardForLesson({
+      lesson: activeLesson,
+      path: activePath,
+      settings: state.settings,
+      preview: true,
+    });
     setPreviewCard({
       ...card,
       uid: createId("preview"),
@@ -492,6 +503,7 @@ function App() {
       sourceLessonId: activeLesson?.id || "preview",
       sourceLessonTitle: activeLesson?.title || "Preview Pull",
     });
+    setAiStatus(card.generatedBy === "openrouter" ? "Preview card generated with OpenRouter." : "Preview card used local fallback.");
   };
 
   const addPath = () => {
@@ -1021,7 +1033,14 @@ function CollectibleCard({ card }) {
         <span>{card.type}</span>
       </div>
       <div className="collect-card-art">
-        <Sparkles size={38} />
+        {card.imageUrl ? (
+          <>
+            <img className="collect-card-backdrop" src={card.imageUrl} alt="" />
+            <img className="collect-card-image" src={card.imageUrl} alt={card.imageName || card.name} />
+          </>
+        ) : (
+          <Sparkles size={38} />
+        )}
       </div>
       <div>
         <h3>{card.name}</h3>
@@ -1032,6 +1051,7 @@ function CollectibleCard({ card }) {
       <div className="collect-meta">
         <span>{card.lineSource || "Original OneThing line"}</span>
         <span>{card.verified ? "verified" : "unverified"}</span>
+        {card.imageSource && <span>{card.imageSource}</span>}
       </div>
       {card.visualPrompt && <p className="collect-prompt">{card.visualPrompt}</p>}
       <div className="collect-card-foot">from {card.sourceLessonTitle}</div>
@@ -1100,6 +1120,86 @@ function getMonthDays(history) {
     const key = date.toISOString().slice(0, 10);
     return { key, day: index + 1, completed: completedDays.has(key) };
   });
+}
+
+async function generateCardForLesson({ lesson, path, settings, preview }) {
+  const localCard = drawCard();
+  const memeImage = await fetchMemeImage();
+  const fallback = {
+    ...localCard,
+    imageUrl: memeImage?.url || "",
+    imageName: memeImage?.name || "",
+    imageSource: memeImage ? "Imgflip meme template API" : "No image source",
+    generatedBy: "local",
+  };
+
+  if (!settings.openRouterKey?.trim()) return fallback;
+
+  try {
+    const prompt = [
+      "Create one collectible study reward card recipe.",
+      "Return strict JSON only with this shape:",
+      '{"name":"...","type":"Meme|Algorithm|Mindset|Heroic|Science","line":"short punchy line","flavor":"1 sentence flavor text","art":"short art tag","visualPrompt":"image prompt, no copyrighted characters","verified":false}',
+      "The card can be meme-ish, cool, philosophical, or anime-inspired, but do not claim a famous quote unless you provide exact source. Prefer original lines.",
+      "Keep it suitable for a personal study app.",
+      `Current path: ${path?.title || "Unknown"}`,
+      `Current lesson: ${lesson?.title || "Preview"}`,
+      `Lesson goal: ${lesson?.goal || ""}`,
+      preview ? "This is a preview pull, not a real reward." : "This is an earned reward.",
+    ].join("\n");
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${settings.openRouterKey.trim()}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "OneThing",
+      },
+      body: JSON.stringify({
+        model: settings.openRouterModel,
+        messages: [
+          { role: "system", content: "You return strict JSON only. No markdown fences." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.9,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || "";
+    const recipe = JSON.parse(text.replace(/```json|```/g, "").trim());
+
+    return {
+      ...fallback,
+      name: String(recipe.name || fallback.name).slice(0, 42),
+      type: String(recipe.type || fallback.type).slice(0, 18),
+      art: String(recipe.art || fallback.art).slice(0, 56),
+      line: String(recipe.line || fallback.line).slice(0, 90),
+      flavor: String(recipe.flavor || fallback.flavor).slice(0, 180),
+      visualPrompt: String(recipe.visualPrompt || fallback.visualPrompt).slice(0, 220),
+      verified: Boolean(recipe.verified),
+      lineSource: recipe.verified ? "OpenRouter generated, marked verified" : "OpenRouter generated, unverified",
+      generatedBy: "openrouter",
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+async function fetchMemeImage() {
+  try {
+    const response = await fetch("https://api.imgflip.com/get_memes");
+    if (!response.ok) return null;
+    const data = await response.json();
+    const memes = data.data?.memes || [];
+    const landscapeSafe = memes.filter((meme) => meme.url && meme.width >= 400 && meme.height >= 300);
+    const chosen = pickOne(landscapeSafe.length ? landscapeSafe : memes);
+    return chosen ? { url: chosen.url, name: chosen.name } : null;
+  } catch {
+    return null;
+  }
 }
 
 function drawCard() {

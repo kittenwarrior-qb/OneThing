@@ -352,7 +352,7 @@ body {
 .collect-card {
   position: relative;
   display: flex;
-  min-height: 330px;
+  min-height: 430px;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
@@ -389,14 +389,36 @@ body {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   place-items: center;
   align-self: center;
   border: 1px solid rgba(33, 31, 25, 0.16);
-  border-radius: 999px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.48);
-  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.collect-card-backdrop,
+.collect-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.collect-card-backdrop {
+  filter: blur(18px) saturate(1.15);
+  object-fit: cover;
+  opacity: 0.52;
+  transform: scale(1.16);
+}
+
+.collect-card-image {
+  z-index: 1;
+  object-fit: contain;
+  padding: 10px;
 }
 
 .collect-card h3 {
