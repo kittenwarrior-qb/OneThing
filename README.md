@@ -19,7 +19,7 @@ npm run build
 
 - Today page with one Main Quest and concrete micro-checks
 - Learning paths built from books, courses, challenges, or pasted table of contents
-- Settings page for a Gemini API key and model name
+- Settings page for an OpenRouter API key and free model name
 - Local JSON data in browser storage, with export/import backup
 - Gacha Vault that mints one collectible card per completed lesson
 - Basic anti-farming: a lesson can only mint one reward card

@@ -226,7 +226,7 @@ const copy = {
     openGacha: "Open gacha card",
     minted: "Reward already minted",
     finishFirst: "Finish checklist first",
-    askGemini: "Ask Gemini",
+    askAI: "Ask OpenRouter",
     focusSession: "focus session",
     focusNote: "Use this as the launch pad. Start here, study in your real tools, then come back to tick.",
     distractionPlaceholder: "Example: wanted YouTube because the problem felt hard.",
@@ -251,7 +251,7 @@ const copy = {
     pipeline: "card pipeline",
     pipelineBody: "Current cards are assembled locally: weighted rarity -> matching archetype -> verified OneThing line -> flavor text -> art prompt. No meme image API is called yet.",
     quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
-    gemini: "gemini",
+    openrouter: "openrouter",
     taskCoach: "Task coach key",
     apiKey: "API key",
     model: "Model",
@@ -270,7 +270,7 @@ const copy = {
     openGacha: "Mở thẻ gacha",
     minted: "Đã nhận quà rồi",
     finishFirst: "Tick xong checklist trước",
-    askGemini: "Hỏi Gemini",
+    askAI: "Hỏi OpenRouter",
     focusSession: "phiên focus",
     focusNote: "Dùng đây làm trạm xuất phát. Bắt đầu ở đây, học bằng công cụ thật, rồi quay lại tick.",
     distractionPlaceholder: "Ví dụ: muốn mở YouTube vì bài khó.",
@@ -295,7 +295,7 @@ const copy = {
     pipeline: "logic tạo thẻ",
     pipelineBody: "Hiện tại thẻ được lắp local: roll rarity theo tỉ lệ -> chọn archetype hợp rarity -> lấy câu OneThing đã verify -> flavor text -> art prompt. Chưa call API lấy hình meme.",
     quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
-    gemini: "gemini",
+    openrouter: "openrouter",
     taskCoach: "Key cho task coach",
     apiKey: "API key",
     model: "Model",
@@ -314,8 +314,8 @@ function createDefaultState() {
   return {
     version: 2,
     settings: {
-      geminiKey: "",
-      geminiModel: "gemini-2.5-flash",
+      openRouterKey: "",
+      openRouterModel: "openai/gpt-oss-20b:free",
       dailyMinutes: 70,
       language: "en",
       theme: "light",
@@ -345,6 +345,9 @@ function loadState() {
       ...createDefaultState().settings,
       ...parsed.settings,
     };
+    if (parsed.settings.geminiKey && !parsed.settings.openRouterKey) {
+      parsed.settings.openRouterKey = "";
+    }
     if (parsed.today.date !== todayKey()) {
       return {
         ...parsed,
@@ -492,9 +495,9 @@ function App() {
     setNewPath({ title: "", source: "", imageUrl: "", toc: "", dailyMinutes: 60 });
   };
 
-  const generateLessonWithGemini = async () => {
-    if (!state.settings.geminiKey.trim() || !activeLesson) {
-      setAiStatus("Add Gemini key in Settings first.");
+  const generateLessonWithOpenRouter = async () => {
+    if (!state.settings.openRouterKey.trim() || !activeLesson) {
+      setAiStatus("Add OpenRouter key in Settings first.");
       return;
     }
     setAiStatus("Generating a stricter task...");
@@ -509,22 +512,32 @@ function App() {
         `Table of contents: ${activePath.toc}`,
         `Current lesson: ${activeLesson.title}`,
       ].join("\n");
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${state.settings.geminiModel}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": state.settings.geminiKey.trim(),
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.settings.openRouterKey.trim()}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "OneThing",
         },
-      );
-      if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
+        body: JSON.stringify({
+          model: state.settings.openRouterModel,
+          messages: [
+            {
+              role: "system",
+              content: "You return strict JSON only. No markdown fences.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.35,
+        }),
+      });
+      if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
       const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const text = data.choices?.[0]?.message?.content || "";
       const generated = JSON.parse(text.replace(/```json|```/g, "").trim());
       updateState((draft) => {
         const path = draft.paths.find((item) => item.id === activePath.id);
@@ -535,7 +548,7 @@ function App() {
         draft.today.checked = {};
         return draft;
       });
-      setAiStatus("Gemini updated today's checklist.");
+      setAiStatus("OpenRouter updated today's checklist.");
     } catch (error) {
       setAiStatus(`Could not generate: ${error.message}`);
     }
@@ -689,9 +702,9 @@ function App() {
                     radius="full"
                     variant="flat"
                     startContent={<WandSparkles size={18} />}
-                    onPress={generateLessonWithGemini}
+                    onPress={generateLessonWithOpenRouter}
                   >
-                    {t.askGemini}
+                    {t.askAI}
                   </Button>
                 </div>
                 {aiStatus && <p className="text-sm text-[var(--muted)]">{aiStatus}</p>}
@@ -886,17 +899,17 @@ function App() {
           <section className="grid gap-5 lg:grid-cols-2">
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">{t.gemini}</p>
+                <p className="mono-label text-[var(--rust)]">{t.openrouter}</p>
                 <h2 className="serif-title text-3xl font-semibold">{t.taskCoach}</h2>
                 <label className="field-label">{t.apiKey}</label>
                 <input
                   className="plain-input"
                   type="password"
-                  placeholder="Paste Gemini API key"
-                  value={state.settings.geminiKey}
+                  placeholder="Paste OpenRouter API key"
+                  value={state.settings.openRouterKey}
                   onChange={(event) =>
                     updateState((draft) => {
-                      draft.settings.geminiKey = event.target.value;
+                      draft.settings.openRouterKey = event.target.value;
                       return draft;
                     })
                   }
@@ -904,10 +917,10 @@ function App() {
                 <label className="field-label">{t.model}</label>
                 <input
                   className="plain-input"
-                  value={state.settings.geminiModel}
+                  value={state.settings.openRouterModel}
                   onChange={(event) =>
                     updateState((draft) => {
-                      draft.settings.geminiModel = event.target.value;
+                      draft.settings.openRouterModel = event.target.value;
                       return draft;
                     })
                   }
