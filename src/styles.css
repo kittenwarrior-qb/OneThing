@@ -109,7 +109,7 @@ body {
   opacity: 0.52;
 }
 
-.gift-button span {
+.gift-button .gift-badge {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -118,6 +118,22 @@ body {
   border: 2px solid var(--surface);
   border-radius: 999px;
   background: #ef4444;
+}
+
+.spinner-dot {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: spin 0.72s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .segmented-nav {
@@ -364,6 +380,50 @@ body {
     linear-gradient(145deg, #11100e, #2a251e 48%, #0d0c0b);
   color: #fff8e8;
   box-shadow: 0 28px 90px rgba(24, 19, 12, 0.34);
+}
+
+.card-skeleton {
+  display: grid;
+  min-height: 560px;
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent),
+    linear-gradient(145deg, #171512, #2b261e);
+  padding: 16px;
+  box-shadow: 0 28px 90px rgba(24, 19, 12, 0.24);
+  animation: skeleton-sheen 1.2s ease-in-out infinite;
+}
+
+.card-skeleton-top,
+.card-skeleton-art,
+.card-skeleton-title {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.card-skeleton-top {
+  height: 22px;
+}
+
+.card-skeleton-art {
+  min-height: 390px;
+}
+
+.card-skeleton-title {
+  height: 80px;
+}
+
+@keyframes skeleton-sheen {
+  0%,
+  100% {
+    filter: brightness(0.92);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
 }
 
 .collect-card[data-rarity="Common"] {

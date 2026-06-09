@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Button,
   Card,
@@ -401,6 +401,9 @@ function App() {
   });
   const [aiStatus, setAiStatus] = useState("");
   const [previewCard, setPreviewCard] = useState(null);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isGeneratingTask, setIsGeneratingTask] = useState(false);
   const importRef = useRef(null);
   const lang = state.settings.language || "en";
   const t = copy[lang];
@@ -465,50 +468,64 @@ function App() {
     if (!canClaim || !activeLesson) return;
     const alreadyCompleted = state.history[activeLesson.id]?.rewardId;
     if (alreadyCompleted) return;
-    const card = await generateCardForLesson({
-      lesson: activeLesson,
-      path: activePath,
-      settings: state.settings,
-      preview: false,
-    });
-    const mintedCard = {
-      ...card,
-      uid: createId("card"),
-      mintedAt: new Date().toISOString(),
-      sourceLessonId: activeLesson.id,
-      sourceLessonTitle: activeLesson.title,
-    };
-    updateState((draft) => {
-      draft.today.completedAt = mintedCard.mintedAt;
-      draft.today.rewardId = mintedCard.uid;
-      draft.history[activeLesson.id] = {
-        completedAt: mintedCard.mintedAt,
-        pathId: activePath.id,
-        lessonTitle: activeLesson.title,
-        rewardId: mintedCard.uid,
+    setIsPulling(true);
+    setAiStatus("Minting your reward card...");
+    try {
+      const card = await generateCardForLesson({
+        lesson: activeLesson,
+        path: activePath,
+        settings: state.settings,
+        preview: false,
+      });
+      const mintedCard = {
+        ...card,
+        uid: createId("card"),
+        mintedAt: new Date().toISOString(),
+        sourceLessonId: activeLesson.id,
+        sourceLessonTitle: activeLesson.title,
       };
-      draft.collection.unshift(mintedCard);
-      return draft;
-    });
-    setActiveTab("vault");
+      updateState((draft) => {
+        draft.today.completedAt = mintedCard.mintedAt;
+        draft.today.rewardId = mintedCard.uid;
+        draft.history[activeLesson.id] = {
+          completedAt: mintedCard.mintedAt,
+          pathId: activePath.id,
+          lessonTitle: activeLesson.title,
+          rewardId: mintedCard.uid,
+        };
+        draft.collection.unshift(mintedCard);
+        return draft;
+      });
+      setAiStatus("Reward minted.");
+      setActiveTab("vault");
+    } finally {
+      setIsPulling(false);
+    }
   };
 
   const testPullCard = async () => {
+    if (isPreviewing) return;
+    setIsPreviewing(true);
+    setPreviewCard(null);
     setAiStatus("Pulling a preview card...");
-    const card = await generateCardForLesson({
-      lesson: activeLesson,
-      path: activePath,
-      settings: state.settings,
-      preview: true,
-    });
-    setPreviewCard({
-      ...card,
-      uid: createId("preview"),
-      mintedAt: new Date().toISOString(),
-      sourceLessonId: activeLesson?.id || "preview",
-      sourceLessonTitle: activeLesson?.title || "Preview Pull",
-    });
-    setAiStatus(card.generatedBy === "openrouter" ? "Preview card generated with OpenRouter." : "Preview card used local fallback.");
+    try {
+      const card = await generateCardForLesson({
+        lesson: activeLesson,
+        path: activePath,
+        settings: state.settings,
+        preview: true,
+      });
+      setPreviewCard({
+        ...card,
+        uid: createId("preview"),
+        mintedAt: new Date().toISOString(),
+        sourceLessonId: activeLesson?.id || "preview",
+        sourceLessonTitle: activeLesson?.title || "Preview Pull",
+      });
+      setAiStatus(card.generatedBy === "openrouter" ? "Preview card generated with OpenRouter." : "Preview card used local fallback.");
+    } finally {
+      setIsPreviewing(false);
+    }
   };
 
   const addPath = () => {
@@ -535,6 +552,7 @@ function App() {
       setAiStatus("Add OpenRouter key in Settings first.");
       return;
     }
+    setIsGeneratingTask(true);
     setAiStatus("Generating a stricter task...");
     try {
       const prompt = [
@@ -586,6 +604,8 @@ function App() {
       setAiStatus("OpenRouter updated today's checklist.");
     } catch (error) {
       setAiStatus(`Could not generate: ${error.message}`);
+    } finally {
+      setIsGeneratingTask(false);
     }
   };
 
@@ -650,9 +670,9 @@ function App() {
               <Languages size={16} />
               {lang === "vi" ? "VI" : "EN"}
             </button>
-            <button className="gift-button" type="button" onClick={claimReward} disabled={!canClaim}>
-              <Gift size={19} />
-              {canClaim && <span />}
+            <button className="gift-button" type="button" onClick={claimReward} disabled={!canClaim || isPulling}>
+              {isPulling ? <span className="spinner-dot" /> : <Gift size={19} />}
+              {canClaim && !isPulling && <span className="gift-badge" />}
             </button>
           </div>
         </header>
@@ -726,20 +746,21 @@ function App() {
                     radius="full"
                     variant="flat"
                     color="warning"
-                    startContent={<Sparkles size={18} />}
-                    isDisabled={!canClaim}
+                    startContent={isPulling ? <SpinnerMini /> : <Sparkles size={18} />}
+                    isDisabled={!canClaim || isPulling}
                     onPress={claimReward}
                   >
-                    {canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
+                    {isPulling ? "Minting..." : canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
                   </Button>
                   <Button
                     size="lg"
                     radius="full"
                     variant="flat"
-                    startContent={<WandSparkles size={18} />}
+                    startContent={isGeneratingTask ? <SpinnerMini /> : <WandSparkles size={18} />}
+                    isDisabled={isGeneratingTask}
                     onPress={generateLessonWithOpenRouter}
                   >
-                    {t.askAI}
+                    {isGeneratingTask ? "Thinking..." : t.askAI}
                   </Button>
                 </div>
                 {aiStatus && <p className="text-sm text-[var(--muted)]">{aiStatus}</p>}
@@ -898,14 +919,20 @@ function App() {
                 <Button
                   color="warning"
                   radius="full"
-                  startContent={<Sparkles size={18} />}
-                  isDisabled={!canClaim}
+                  startContent={isPulling ? <SpinnerMini /> : <Sparkles size={18} />}
+                  isDisabled={!canClaim || isPulling}
                   onPress={claimReward}
                 >
-                  {canClaim ? t.pull : t.noPull}
+                  {isPulling ? "Minting..." : canClaim ? t.pull : t.noPull}
                 </Button>
-                <Button radius="full" variant="flat" startContent={<Gift size={18} />} onPress={testPullCard}>
-                  {t.testPull}
+                <Button
+                  radius="full"
+                  variant="flat"
+                  startContent={isPreviewing ? <SpinnerMini /> : <Gift size={18} />}
+                  isDisabled={isPreviewing}
+                  onPress={testPullCard}
+                >
+                  {isPreviewing ? "Generating..." : t.testPull}
                 </Button>
                 <Separator />
                 <div>
@@ -916,11 +943,23 @@ function App() {
                 <Separator />
                 <div className="grid gap-3">
                   <p className="mono-label">{t.previewOnly}</p>
-                  {previewCard ? (
-                    <CollectibleCard card={previewCard} />
-                  ) : (
-                    <p className="text-sm text-[var(--muted)]">{t.previewEmpty}</p>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {isPreviewing ? (
+                      <CardSkeleton key="preview-loading" />
+                    ) : previewCard ? (
+                      <CollectibleCard card={previewCard} key={previewCard.uid} />
+                    ) : (
+                      <motion.p
+                        key="preview-empty"
+                        className="text-sm text-[var(--muted)]"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                      >
+                        {t.previewEmpty}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
               </CardContent>
             </Card>
@@ -1016,6 +1055,26 @@ function TabTitle({ icon, label }) {
       {icon}
       {label}
     </span>
+  );
+}
+
+function SpinnerMini() {
+  return <span className="spinner-dot" aria-hidden="true" />;
+}
+
+function CardSkeleton() {
+  return (
+    <motion.div
+      className="card-skeleton"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="card-skeleton-top" />
+      <div className="card-skeleton-art" />
+      <div className="card-skeleton-title" />
+    </motion.div>
   );
 }
 
