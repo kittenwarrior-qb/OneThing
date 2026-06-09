@@ -725,8 +725,10 @@ function App() {
           ))}
         </nav>
 
+        <AnimatePresence mode="wait">
         {activeTab === "today" && (
-          <section className="grid flex-1 gap-5 lg:grid-cols-[1.25fr_.75fr]">
+          <MotionSection key="today" className="grid flex-1 gap-5 lg:grid-cols-[1.25fr_.75fr]">
+            <MotionCard>
             <Card className="soft-card">
               <CardContent className="gap-6 p-6 sm:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -748,10 +750,15 @@ function App() {
 
                 <div className="grid gap-3">
                   {checks.map((task, index) => (
-                    <button
+                    <motion.button
                       className={`task-row ${state.today.checked[index] ? "task-row-done task-pop" : ""}`}
                       key={`${activeLesson.id}-${task}`}
                       onClick={() => toggleCheck(index)}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.035 }}
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.992 }}
                     >
                       <Checkbox
                         isSelected={Boolean(state.today.checked[index])}
@@ -762,7 +769,7 @@ function App() {
                       />
                       <span>{task}</span>
                       {state.today.checked[index] && <Check className="ml-auto text-emerald-600" size={18} />}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
@@ -820,8 +827,10 @@ function App() {
                 />
               </CardContent>
             </Card>
+            </MotionCard>
 
             <aside className="grid gap-5">
+              <MotionCard delay={0.08}>
               <Card className="soft-card">
                 <CardContent className="gap-4 p-6">
                   <div className="flex items-center gap-3">
@@ -837,7 +846,9 @@ function App() {
                   <p className="text-sm text-[var(--muted)]">{t.streakHint}</p>
                 </CardContent>
               </Card>
+              </MotionCard>
 
+              <MotionCard delay={0.14}>
               <Card className="soft-card">
                 <CardContent className="gap-4 p-6">
                   <div className="flex items-center gap-3">
@@ -858,18 +869,20 @@ function App() {
                   </div>
                 </CardContent>
               </Card>
+              </MotionCard>
             </aside>
-          </section>
+          </MotionSection>
         )}
 
         {activeTab === "paths" && (
-          <section className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
+          <MotionSection key="paths" className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
             <div className="grid gap-4">
               {state.paths.map((path) => {
                 const completed = path.lessons.filter((lesson) => state.history[lesson.id]?.completedAt).length;
                 const percent = path.lessons.length ? Math.round((completed / path.lessons.length) * 100) : 0;
                 return (
-                  <Card className="soft-card" key={path.id}>
+                  <MotionCard key={path.id}>
+                  <Card className="soft-card">
                     <CardContent className="gap-4 p-6">
                       <div className="flex gap-4">
                         <Cover path={path} />
@@ -888,24 +901,28 @@ function App() {
                       </div>
                       <div className="grid gap-2">
                         {path.lessons.slice(0, 4).map((lesson) => (
-                          <button
+                          <motion.button
                             className="lesson-row"
                             key={lesson.id}
                             onClick={() => setTodayQuest(path.id, lesson.id)}
+                            whileHover={{ y: -1 }}
+                            whileTap={{ scale: 0.992 }}
                           >
                             <span>{lesson.title}</span>
                             <Chip size="sm" variant="flat">
                               {state.history[lesson.id]?.completedAt ? "done" : `${lesson.minutes}m`}
                             </Chip>
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
                     </CardContent>
                   </Card>
+                  </MotionCard>
                 );
               })}
             </div>
 
+            <MotionCard delay={0.08}>
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
                 <p className="mono-label text-[var(--rust)]">{t.addPath}</p>
@@ -940,11 +957,13 @@ function App() {
                 </Button>
               </CardContent>
             </Card>
-          </section>
+            </MotionCard>
+          </MotionSection>
         )}
 
         {activeTab === "vault" && (
-          <section className="vault-page">
+          <MotionSection key="vault" className="vault-page">
+            <MotionCard>
             <Card className="soft-card vault-hero">
               <CardContent className="vault-hero-content p-6">
                 <div className="vault-copy">
@@ -1003,6 +1022,7 @@ function App() {
                 </div>
               </CardContent>
             </Card>
+            </MotionCard>
 
             <section className="collection-section">
               <div className="collection-header">
@@ -1024,11 +1044,12 @@ function App() {
                 ))}
               </div>
             </section>
-          </section>
+          </MotionSection>
         )}
 
         {activeTab === "settings" && (
-          <section className="grid gap-5 lg:grid-cols-2">
+          <MotionSection key="settings" className="grid gap-5 lg:grid-cols-2">
+            <MotionCard>
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
                 <p className="mono-label text-[var(--rust)]">{t.openrouter}</p>
@@ -1062,7 +1083,9 @@ function App() {
                 </p>
               </CardContent>
             </Card>
+            </MotionCard>
 
+            <MotionCard delay={0.08}>
             <Card className="soft-card">
               <CardContent className="gap-4 p-6">
                 <p className="mono-label text-[var(--rust)]">{t.backup}</p>
@@ -1088,8 +1111,10 @@ function App() {
                 </div>
               </CardContent>
             </Card>
-          </section>
+            </MotionCard>
+          </MotionSection>
         )}
+        </AnimatePresence>
       </div>
     </main>
   );
@@ -1101,6 +1126,32 @@ function TabTitle({ icon, label }) {
       {icon}
       {label}
     </span>
+  );
+}
+
+function MotionSection({ children, className }) {
+  return (
+    <motion.section
+      className={className}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+function MotionCard({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
