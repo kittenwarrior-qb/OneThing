@@ -217,15 +217,19 @@ const raritySerialPrefix = {
 };
 
 const navTabs = [
-  { key: "today", label: "Today", icon: <ListChecks size={16} /> },
-  { key: "paths", label: "Paths", icon: <BookOpen size={16} /> },
-  { key: "vault", label: "Vault", icon: <Gift size={16} /> },
-  { key: "settings", label: "Settings", icon: <Settings size={16} /> },
+  { key: "today", labelKey: "todayTab", icon: <ListChecks size={16} /> },
+  { key: "paths", labelKey: "pathsTab", icon: <BookOpen size={16} /> },
+  { key: "vault", labelKey: "vaultTab", icon: <Gift size={16} /> },
+  { key: "settings", labelKey: "settingsTab", icon: <Settings size={16} /> },
 ];
 
 const copy = {
   en: {
     rescue: "personal rescue system",
+    todayTab: "Today",
+    pathsTab: "Paths",
+    vaultTab: "Vault",
+    settingsTab: "Settings",
     mainQuest: "Main Quest today",
     startFocus: "Start focus",
     openGacha: "Open gacha card",
@@ -253,6 +257,7 @@ const copy = {
     pull: "Pull one card",
     noPull: "No pull available",
     noCards: "No cards yet. Finish today's checklist to pull your first one.",
+    collectionTitle: "Collection",
     testPull: "Test pull",
     previewOnly: "Preview only. This card is not saved.",
     previewEmpty: "Use Test pull to preview the generator before you earn a real card.",
@@ -270,9 +275,25 @@ const copy = {
     exportJson: "Export JSON",
     importJson: "Import JSON",
     antiCheat: "A real anti-cheat system needs backend auth. This local version prevents accidental farming, not devtools tampering.",
+    minting: "Minting...",
+    generating: "Generating...",
+    thinking: "Thinking...",
+    onethingReward: "OneThing reward",
+    mintingStatus: "Minting your reward card...",
+    previewStatus: "Pulling a preview card...",
+    previewOpenRouterStatus: "Preview card generated with OpenRouter.",
+    previewFallbackStatus: "Preview card used local fallback.",
+    rewardMintedStatus: "Reward minted.",
+    addOpenRouterKeyStatus: "Add OpenRouter key in Settings first.",
+    generatingTaskStatus: "Generating a stricter task...",
+    cardsUnit: "cards",
   },
   vi: {
     rescue: "hệ thống cứu focus cá nhân",
+    todayTab: "Hôm nay",
+    pathsTab: "Lộ trình",
+    vaultTab: "Kho thẻ",
+    settingsTab: "Cài đặt",
     mainQuest: "Nhiệm vụ chính hôm nay",
     startFocus: "Bắt đầu focus",
     openGacha: "Mở thẻ gacha",
@@ -300,6 +321,7 @@ const copy = {
     pull: "Rút một thẻ",
     noPull: "Chưa có lượt rút",
     noCards: "Chưa có thẻ. Hoàn thành checklist hôm nay để rút thẻ đầu tiên.",
+    collectionTitle: "Bộ sưu tập",
     testPull: "Test rút thẻ",
     previewOnly: "Chỉ xem thử. Thẻ này không được lưu.",
     previewEmpty: "Bấm Test rút thẻ để xem generator trước khi nhận thẻ thật.",
@@ -317,6 +339,18 @@ const copy = {
     exportJson: "Export JSON",
     importJson: "Import JSON",
     antiCheat: "Chống ăn gian thật cần backend auth. Bản local này chống farm vô tình, không chống sửa devtools.",
+    minting: "Đang mint...",
+    generating: "Đang tạo...",
+    thinking: "Đang nghĩ...",
+    onethingReward: "Phần thưởng OneThing",
+    mintingStatus: "Đang mint thẻ thưởng...",
+    previewStatus: "Đang rút thử một thẻ...",
+    previewOpenRouterStatus: "Thẻ preview được tạo bằng OpenRouter.",
+    previewFallbackStatus: "Thẻ preview dùng fallback local.",
+    rewardMintedStatus: "Đã mint thẻ thưởng.",
+    addOpenRouterKeyStatus: "Thêm OpenRouter key trong Cài đặt trước.",
+    generatingTaskStatus: "Đang tạo task chặt hơn...",
+    cardsUnit: "thẻ",
   },
 };
 
@@ -469,7 +503,7 @@ function App() {
     const alreadyCompleted = state.history[activeLesson.id]?.rewardId;
     if (alreadyCompleted) return;
     setIsPulling(true);
-    setAiStatus("Minting your reward card...");
+    setAiStatus(t.mintingStatus);
     try {
       const card = await generateCardForLesson({
         lesson: activeLesson,
@@ -496,7 +530,7 @@ function App() {
         draft.collection.unshift(mintedCard);
         return draft;
       });
-      setAiStatus("Reward minted.");
+      setAiStatus(t.rewardMintedStatus);
       setActiveTab("vault");
     } finally {
       setIsPulling(false);
@@ -507,7 +541,7 @@ function App() {
     if (isPreviewing) return;
     setIsPreviewing(true);
     setPreviewCard(null);
-    setAiStatus("Pulling a preview card...");
+    setAiStatus(t.previewStatus);
     try {
       const card = await generateCardForLesson({
         lesson: activeLesson,
@@ -522,7 +556,7 @@ function App() {
         sourceLessonId: activeLesson?.id || "preview",
         sourceLessonTitle: activeLesson?.title || "Preview Pull",
       });
-      setAiStatus(card.generatedBy === "openrouter" ? "Preview card generated with OpenRouter." : "Preview card used local fallback.");
+      setAiStatus(card.generatedBy === "openrouter" ? t.previewOpenRouterStatus : t.previewFallbackStatus);
     } finally {
       setIsPreviewing(false);
     }
@@ -549,11 +583,11 @@ function App() {
 
   const generateLessonWithOpenRouter = async () => {
     if (!state.settings.openRouterKey.trim() || !activeLesson) {
-      setAiStatus("Add OpenRouter key in Settings first.");
+      setAiStatus(t.addOpenRouterKeyStatus);
       return;
     }
     setIsGeneratingTask(true);
-    setAiStatus("Generating a stricter task...");
+    setAiStatus(t.generatingTaskStatus);
     try {
       const prompt = [
         "You are a strict but kind study coach.",
@@ -686,7 +720,7 @@ function App() {
               onClick={() => setActiveTab(tab.key)}
               aria-current={activeTab === tab.key ? "page" : undefined}
             >
-              <TabTitle icon={tab.icon} label={tab.label} />
+              <TabTitle icon={tab.icon} label={t[tab.labelKey]} />
             </button>
           ))}
         </nav>
@@ -750,7 +784,7 @@ function App() {
                     isDisabled={!canClaim || isPulling}
                     onPress={claimReward}
                   >
-                    {isPulling ? "Minting..." : canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
+                    {isPulling ? t.minting : canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
                   </Button>
                   <Button
                     size="lg"
@@ -760,7 +794,7 @@ function App() {
                     isDisabled={isGeneratingTask}
                     onPress={generateLessonWithOpenRouter}
                   >
-                    {isGeneratingTask ? "Thinking..." : t.askAI}
+                    {isGeneratingTask ? t.thinking : t.askAI}
                   </Button>
                 </div>
                 {aiStatus && <p className="text-sm text-[var(--muted)]">{aiStatus}</p>}
@@ -910,74 +944,86 @@ function App() {
         )}
 
         {activeTab === "vault" && (
-          <section className="grid gap-5 lg:grid-cols-[.78fr_1.22fr]">
-            <Card className="soft-card">
-              <CardContent className="gap-4 p-6">
-                <p className="mono-label text-[var(--rust)]">{t.vault}</p>
-                <h2 className="serif-title text-4xl font-semibold">{t.collect}</h2>
-                <p className="text-[var(--muted)]">{t.vaultHint}</p>
-                <Button
-                  color="warning"
-                  radius="full"
-                  startContent={isPulling ? <SpinnerMini /> : <Sparkles size={18} />}
-                  isDisabled={!canClaim || isPulling}
-                  onPress={claimReward}
-                >
-                  {isPulling ? "Minting..." : canClaim ? t.pull : t.noPull}
-                </Button>
-                <Button
-                  radius="full"
-                  variant="flat"
-                  startContent={isPreviewing ? <SpinnerMini /> : <Gift size={18} />}
-                  isDisabled={isPreviewing}
-                  onPress={testPullCard}
-                >
-                  {isPreviewing ? "Generating..." : t.testPull}
-                </Button>
-                <Separator />
-                <div>
-                  <p className="mono-label">{t.pipeline}</p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">{t.pipelineBody}</p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">{t.quoteNote}</p>
+          <section className="vault-page">
+            <Card className="soft-card vault-hero">
+              <CardContent className="vault-hero-content p-6">
+                <div className="vault-copy">
+                  <p className="mono-label text-[var(--rust)]">{t.vault}</p>
+                  <h2 className="serif-title text-4xl font-semibold">{t.collect}</h2>
+                  <p className="text-[var(--muted)]">{t.vaultHint}</p>
+                  <div className="vault-actions">
+                    <Button
+                      color="warning"
+                      radius="full"
+                      startContent={isPulling ? <SpinnerMini /> : <Sparkles size={18} />}
+                      isDisabled={!canClaim || isPulling}
+                      onPress={claimReward}
+                    >
+                      {isPulling ? t.minting : canClaim ? t.pull : t.noPull}
+                    </Button>
+                    <Button
+                      radius="full"
+                      variant="flat"
+                      startContent={isPreviewing ? <SpinnerMini /> : <Gift size={18} />}
+                      isDisabled={isPreviewing}
+                      onPress={testPullCard}
+                    >
+                      {isPreviewing ? t.generating : t.testPull}
+                    </Button>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="mono-label">{t.pipeline}</p>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{t.pipelineBody}</p>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{t.quoteNote}</p>
+                  </div>
                 </div>
-                <Separator />
-                <div className="grid gap-3">
+
+                <div className="vault-preview">
                   <p className="mono-label">{t.previewOnly}</p>
-                  <AnimatePresence mode="wait">
-                    {isPreviewing ? (
-                      <CardSkeleton key="preview-loading" />
-                    ) : previewCard ? (
-                      <CollectibleCard card={previewCard} key={previewCard.uid} />
-                    ) : (
-                      <motion.p
-                        key="preview-empty"
-                        className="text-sm text-[var(--muted)]"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                      >
-                        {t.previewEmpty}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <div className="vault-preview-frame">
+                    <AnimatePresence mode="wait">
+                      {isPreviewing ? (
+                        <CardSkeleton key="preview-loading" />
+                      ) : previewCard ? (
+                        <CollectibleCard card={previewCard} key={previewCard.uid} rewardLabel={t.onethingReward} />
+                      ) : (
+                        <motion.p
+                          key="preview-empty"
+                          className="text-sm text-[var(--muted)]"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                        >
+                          {t.previewEmpty}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <ScrollShadow className="max-h-[620px]">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <section className="collection-section">
+              <div className="collection-header">
+                <div>
+                  <p className="mono-label text-[var(--rust)]">{t.collectionTitle}</p>
+                  <h3 className="serif-title text-3xl font-semibold">{state.collection.length} {t.cardsUnit}</h3>
+                </div>
+              </div>
+              <div className="collection-grid">
                 {state.collection.length === 0 && (
-                  <Card className="soft-card">
+                  <Card className="soft-card empty-collection">
                     <CardContent className="p-6">
                       <p className="text-[var(--muted)]">{t.noCards}</p>
                     </CardContent>
                   </Card>
                 )}
                 {state.collection.map((card) => (
-                  <CollectibleCard card={card} key={card.uid} />
+                  <CollectibleCard card={card} key={card.uid} rewardLabel={t.onethingReward} />
                 ))}
               </div>
-            </ScrollShadow>
+            </section>
           </section>
         )}
 
@@ -1089,7 +1135,7 @@ function Cover({ path }) {
   );
 }
 
-function CollectibleCard({ card }) {
+function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = card.imageUrl && !imageFailed;
 
@@ -1138,7 +1184,7 @@ function CollectibleCard({ card }) {
         <h3>{card.name}</h3>
         <p>{card.type} / {card.imageName || card.art}</p>
       </div>
-      <div className="collect-card-foot">ONETHING REWARD</div>
+      <div className="collect-card-foot">{rewardLabel}</div>
     </motion.article>
   );
 }

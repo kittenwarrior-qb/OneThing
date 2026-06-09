@@ -180,6 +180,62 @@ body {
   box-shadow: 0 8px 22px rgba(33, 31, 25, 0.18);
 }
 
+.vault-page {
+  display: grid;
+  gap: 22px;
+}
+
+.vault-hero-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 28px;
+  align-items: start;
+}
+
+.vault-copy,
+.vault-preview {
+  display: grid;
+  gap: 14px;
+}
+
+.vault-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vault-preview-frame {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+}
+
+.vault-preview-frame > * {
+  width: 100%;
+}
+
+.collection-section {
+  display: grid;
+  gap: 14px;
+}
+
+.collection-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
+  gap: 18px;
+}
+
+.empty-collection {
+  grid-column: 1 / -1;
+}
+
 .task-row {
   display: flex;
   min-height: 64px;
@@ -369,7 +425,9 @@ body {
   position: relative;
   display: flex;
   isolation: isolate;
-  min-height: 560px;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  min-height: 0;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
@@ -384,7 +442,9 @@ body {
 
 .card-skeleton {
   display: grid;
-  min-height: 560px;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  min-height: 0;
   gap: 14px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -409,7 +469,7 @@ body {
 }
 
 .card-skeleton-art {
-  min-height: 390px;
+  min-height: 0;
 }
 
 .card-skeleton-title {
@@ -516,7 +576,7 @@ body {
   display: grid;
   width: 100%;
   flex: 1;
-  min-height: 390px;
+  min-height: 0;
   place-items: center;
   align-self: center;
   border-block: 1px solid rgba(255, 255, 255, 0.14);
@@ -566,14 +626,14 @@ body {
   bottom: 0;
   left: 0;
   background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
-  padding: 80px 20px 20px;
+  padding: 64px 18px 18px;
   color: #fffdf8;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .collect-quote span {
   display: block;
-  font-size: clamp(1.05rem, 3vw, 1.45rem);
+  font-size: clamp(1rem, 2.4vw, 1.28rem);
   font-weight: 900;
   line-height: 1.12;
 }
@@ -581,18 +641,18 @@ body {
 .collect-title-strip {
   position: relative;
   z-index: 3;
-  margin: 0 14px 12px;
+  margin: 0 12px 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.34);
-  padding: 12px 14px;
+  padding: 10px 12px;
   backdrop-filter: blur(14px);
 }
 
 .collect-title-strip h3 {
   margin: 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: 1.58rem;
+  font-size: clamp(1.18rem, 2.6vw, 1.42rem);
   font-weight: 600;
   color: #fff8e8;
 }
@@ -720,5 +780,19 @@ body {
   .focus-inline {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .vault-hero-content {
+    grid-template-columns: 1fr;
+  }
+
+  .vault-preview-frame {
+    max-width: 320px;
+    min-height: 0;
+    justify-self: center;
+  }
+
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 }
