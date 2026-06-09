@@ -386,7 +386,7 @@ const copy = {
     previewOnly: "Preview only. This card is not saved.",
     previewEmpty: "Use Test pull to preview the generator before you earn a real card.",
     pipeline: "card pipeline",
-    pipelineBody: "Cards now use: rarity -> AI recipe/search query -> GIPHY image/GIF -> local sticker only if search fails.",
+    pipelineBody: "Cards now use: rarity -> locked reward theme -> GIPHY image/GIF. Pop-culture cards do not mint with sticker fallback.",
     quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
     openrouter: "openrouter",
     taskCoach: "Task coach key",
@@ -412,7 +412,7 @@ const copy = {
     previewOpenRouterStatus: "Preview card generated with OpenRouter.",
     previewFallbackStatus: "Preview card used local fallback.",
     rewardMintedStatus: "Reward minted.",
-    visualFallbackStatus: "No GIPHY image found, so the card used the emergency sticker fallback.",
+    visualFallbackStatus: "Spider-Man/celeb cards need GIPHY media. Add a GIPHY key or retry after search works; no sticker was minted.",
     addOpenRouterKeyStatus: "Add OpenRouter key in Settings first.",
     generatingTaskStatus: "Generating a stricter task...",
     cardsUnit: "cards",
@@ -455,7 +455,7 @@ const copy = {
     previewOnly: "Chỉ xem thử. Thẻ này không được lưu.",
     previewEmpty: "Bấm Test rút thẻ để xem generator trước khi nhận thẻ thật.",
     pipeline: "logic tạo thẻ",
-    pipelineBody: "Thẻ giờ đi theo: rarity -> AI recipe/search query -> ảnh/GIF GIPHY -> chỉ fallback sticker nếu search fail.",
+    pipelineBody: "Thẻ giờ đi theo: rarity -> reward theme đã khóa -> ảnh/GIF GIPHY. Thẻ pop-culture sẽ không mint bằng sticker fallback.",
     quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
     openrouter: "openrouter",
     taskCoach: "Key cho task coach",
@@ -481,7 +481,7 @@ const copy = {
     previewOpenRouterStatus: "Thẻ preview được tạo bằng OpenRouter.",
     previewFallbackStatus: "Thẻ preview dùng fallback local.",
     rewardMintedStatus: "Đã mint thẻ thưởng.",
-    visualFallbackStatus: "Không tìm được ảnh GIPHY nên thẻ phải dùng sticker fallback khẩn cấp.",
+    visualFallbackStatus: "Thẻ Spider-Man/celeb cần media từ GIPHY. Thêm GIPHY key hoặc retry khi search chạy được; không mint sticker.",
     addOpenRouterKeyStatus: "Thêm OpenRouter key trong Cài đặt trước.",
     generatingTaskStatus: "Đang tạo task chặt hơn...",
     cardsUnit: "thẻ",
@@ -647,6 +647,11 @@ function App() {
         settings: state.settings,
         preview: false,
       });
+      if (card.mediaRequired) {
+        setAiStatus(t.visualFallbackStatus);
+        setActiveTab("settings");
+        return;
+      }
       const mintedCard = {
         ...card,
         uid: createId("card"),
@@ -1358,12 +1363,13 @@ function Cover({ path }) {
 function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = card.imageUrl && !imageFailed;
+  const missingMedia = card.mediaRequired || card.imageSource === "Missing GIPHY media";
 
   return (
     <motion.article
       className="collect-card"
       data-rarity={card.rarity}
-      data-visual-source={card.imageSource === "OneThing sticker pack" ? "sticker" : "media"}
+      data-visual-source={missingMedia ? "missing" : card.imageSource === "OneThing sticker pack" ? "sticker" : "media"}
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={{ y: -4, rotateX: 1.2, rotateY: -1.2 }}
@@ -1387,6 +1393,12 @@ function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
+        ) : missingMedia ? (
+          <div className="collect-missing-art">
+            <ImagePlus size={34} />
+            <strong>Needs GIPHY media</strong>
+            <span>{card.imageQuery}</span>
+          </div>
         ) : (
           <div className="collect-fallback-art">
             <Sparkles size={42} />
@@ -1570,6 +1582,16 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
 
 async function applyGiphyVisual(card, settings, query) {
   const giphy = await searchGiphy(settings, query, card.serial, Boolean(card.pipeline?.themeSource));
+  if (!giphy && card.pipeline?.themeSource) {
+    return {
+      ...card,
+      imageUrl: "",
+      imageName: "Needs GIPHY media",
+      imageSource: "Missing GIPHY media",
+      imageQuery: query,
+      mediaRequired: true,
+    };
+  }
   if (!giphy) return card;
   return {
     ...card,
