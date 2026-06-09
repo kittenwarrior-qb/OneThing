@@ -478,6 +478,27 @@ body {
   padding: 0;
 }
 
+.collect-fallback-art {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--foil-a) 42%, transparent), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.34)),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 9px);
+  color: rgba(255, 248, 232, 0.86);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collect-card,
+  .collect-card * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 .collect-quote {
   position: absolute;
   z-index: 2;

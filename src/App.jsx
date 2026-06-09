@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Button,
   Card,
@@ -1030,31 +1031,56 @@ function Cover({ path }) {
 }
 
 function CollectibleCard({ card }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = card.imageUrl && !imageFailed;
+
   return (
-    <article className="collect-card" data-rarity={card.rarity}>
+    <motion.article
+      className="collect-card"
+      data-rarity={card.rarity}
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      whileHover={{ y: -4, rotateX: 1.2, rotateY: -1.2 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="collect-bg">
-        {card.imageUrl && <img src={card.imageUrl} alt="" />}
+        {showImage && <img src={card.imageUrl} alt="" onError={() => setImageFailed(true)} />}
       </div>
       <div className="collect-card-top">
         <span>{card.serial || card.rarity}</span>
         <span>{card.rarity}</span>
       </div>
       <div className="collect-card-art">
-        {card.imageUrl ? (
-          <img className="collect-card-image" src={card.imageUrl} alt={card.imageName || card.name} />
+        {showImage ? (
+          <motion.img
+            className="collect-card-image"
+            src={card.imageUrl}
+            alt={card.imageName || card.name}
+            onError={() => setImageFailed(true)}
+            initial={{ scale: 1.04, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
         ) : (
-          <Sparkles size={38} />
+          <div className="collect-fallback-art">
+            <Sparkles size={42} />
+          </div>
         )}
-        <div className="collect-quote">
+        <motion.div
+          className="collect-quote"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.26 }}
+        >
           <span>{card.line}</span>
-        </div>
+        </motion.div>
       </div>
       <div className="collect-title-strip">
         <h3>{card.name}</h3>
         <p>{card.type} / {card.imageName || card.art}</p>
       </div>
       <div className="collect-card-foot">ONETHING REWARD</div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -1128,7 +1154,7 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     ...localCard,
     imageUrl: buildGeneratedImageUrl(fallbackImagePrompt, localCard.serial),
     imageName: "AI reward visual",
-    imageSource: "Pollinations image API",
+    imageSource: "Seeded high-resolution visual",
     visualPrompt: fallbackImagePrompt,
     generatedBy: "local",
   };
@@ -1187,7 +1213,7 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       visualPrompt,
       imageUrl: buildGeneratedImageUrl(visualPrompt, fallback.serial),
       imageName: "AI reward visual",
-      imageSource: "Pollinations image API",
+      imageSource: "Seeded high-resolution visual",
       verified: Boolean(recipe.verified),
       lineSource: recipe.verified ? "OpenRouter generated, marked verified" : "OpenRouter generated, unverified",
       generatedBy: "openrouter",
@@ -1209,8 +1235,7 @@ function enhanceCardImagePrompt(prompt, line) {
 
 function buildGeneratedImageUrl(prompt, seedSource) {
   const seed = hashSeed(seedSource || prompt);
-  const encoded = encodeURIComponent(prompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?model=flux&width=768&height=1024&seed=${seed}&nologo=true&enhance=true&safe=true`;
+  return `https://picsum.photos/seed/onething-${seed}/768/1024`;
 }
 
 function drawCard() {
