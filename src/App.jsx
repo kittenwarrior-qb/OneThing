@@ -287,6 +287,59 @@ const visualPacks = {
   ],
 };
 
+const rewardThemes = [
+  {
+    id: "spiderman",
+    match: ["spider", "spider-man", "spiderman", "peter parker", "uncle ben"],
+    name: "Responsibility Arc",
+    type: "Heroic",
+    line: "With great power comes responsibility.",
+    flavor: "A classic hero reminder for one completed checkbox.",
+    art: "Spider-Man / Uncle Ben source match",
+    imageQuery: "spider man uncle ben great power responsibility gif",
+  },
+  {
+    id: "the-boys",
+    match: ["the boys", "billy butcher", "butcher", "oi oi oi"],
+    name: "Oi Oi Focus",
+    type: "Reaction",
+    line: "Oi. Back to work.",
+    flavor: "Loud energy, tiny checklist.",
+    art: "The Boys reaction source match",
+    imageQuery: "billy butcher the boys oi gif",
+  },
+  {
+    id: "football",
+    match: ["football", "soccer", "panini", "messi", "ronaldo", "haaland", "mbappe"],
+    name: "Match Winner",
+    type: "Heroic",
+    line: "One more win in the book.",
+    flavor: "A card-pull celebration for showing up.",
+    art: "Football celebration source match",
+    imageQuery: "football player celebration gif",
+  },
+  {
+    id: "anime",
+    match: ["anime", "one piece", "luffy", "naruto", "gojo", "jujutsu"],
+    name: "Main Arc",
+    type: "Heroic",
+    line: "Training arc continues.",
+    flavor: "Small episode, real progress.",
+    art: "Anime training reaction source match",
+    imageQuery: "anime training arc reaction gif",
+  },
+  {
+    id: "genz",
+    match: ["gen z", "genz", "meme", "reaction"],
+    name: "Reaction Pull",
+    type: "Reaction",
+    line: "Back before the scroll won.",
+    flavor: "The timeline lost this round.",
+    art: "Modern reaction source match",
+    imageQuery: "gen z reaction meme gif focus",
+  },
+];
+
 const navTabs = [
   { key: "today", labelKey: "todayTab", icon: <ListChecks size={16} /> },
   { key: "paths", labelKey: "pathsTab", icon: <BookOpen size={16} /> },
@@ -1422,11 +1475,13 @@ function getMonthDays(history) {
 
 async function generateCardForLesson({ lesson, path, settings, preview }) {
   const localCard = drawCard();
-  const fallbackVisual = pickVisualForType(localCard.type, localCard.serial);
-  const fallbackImagePrompt = enhanceCardImagePrompt(fallbackVisual.mood, localCard.line);
-  const fallbackImageQuery = buildFallbackImageQuery(localCard, lesson, path, settings);
+  const rewardTheme = pickRewardTheme(settings, localCard.serial);
+  const themedLocalCard = rewardTheme ? applyRewardTheme(localCard, rewardTheme) : localCard;
+  const fallbackVisual = pickVisualForType(themedLocalCard.type, themedLocalCard.serial);
+  const fallbackImagePrompt = enhanceCardImagePrompt(fallbackVisual.mood, themedLocalCard.line);
+  const fallbackImageQuery = buildFallbackImageQuery(themedLocalCard, lesson, path, settings, rewardTheme);
   const fallback = {
-    ...localCard,
+    ...themedLocalCard,
     imageUrl: buildStickerDataUrl(fallbackVisual, localCard.rarity, localCard.serial),
     imageName: fallbackVisual.name,
     imageSource: "OneThing sticker pack",
@@ -1453,6 +1508,9 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       `Current lesson: ${lesson?.title || "Preview"}`,
       `Lesson goal: ${lesson?.goal || ""}`,
       `User reward taste: ${settings.rewardTaste || "Gen Z memes, anime reactions, superheroes, football cards"}`,
+      rewardTheme
+        ? `Selected locked visual theme: ${rewardTheme.name}. Use this exact source family. Required imageQuery: ${rewardTheme.imageQuery}. Required quote direction: ${rewardTheme.line}.`
+        : "No locked visual theme was selected.",
       "Keep line short because it overlays on the image. Avoid long explanations.",
       preview ? "This is a preview pull, not a real reward." : "This is an earned reward.",
     ].join("\n");
@@ -1480,22 +1538,22 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     const text = data.choices?.[0]?.message?.content || "";
     const recipe = JSON.parse(text.replace(/```json|```/g, "").trim());
 
-    const cardType = normalizeCardType(recipe.type || fallback.type);
+    const cardType = rewardTheme ? rewardTheme.type : normalizeCardType(recipe.type || fallback.type);
     const visual = pickVisualForType(cardType, `${fallback.serial}-${recipe.name || ""}-${recipe.line || ""}`);
     const visualPrompt = enhanceCardImagePrompt(
       String(recipe.visualPrompt || fallback.visualPrompt).slice(0, 220),
-      String(recipe.line || fallback.line).slice(0, 90),
+      String(rewardTheme?.line || recipe.line || fallback.line).slice(0, 90),
     );
 
     const generatedCard = {
       ...fallback,
-      name: String(recipe.name || fallback.name).slice(0, 42),
+      name: String(rewardTheme?.name || recipe.name || fallback.name).slice(0, 42),
       type: cardType,
-      art: String(recipe.art || fallback.art).slice(0, 56),
-      line: String(recipe.line || fallback.line).slice(0, 90),
-      flavor: String(recipe.flavor || fallback.flavor).slice(0, 180),
+      art: String(rewardTheme?.art || recipe.art || fallback.art).slice(0, 56),
+      line: String(rewardTheme?.line || recipe.line || fallback.line).slice(0, 90),
+      flavor: String(rewardTheme?.flavor || recipe.flavor || fallback.flavor).slice(0, 180),
       visualPrompt,
-      imageQuery: String(recipe.imageQuery || fallback.imageQuery).slice(0, 140),
+      imageQuery: String(rewardTheme?.imageQuery || recipe.imageQuery || fallback.imageQuery).slice(0, 140),
       imageUrl: buildStickerDataUrl(visual, fallback.rarity, fallback.serial),
       imageName: visual.name,
       imageSource: "OneThing sticker pack",
@@ -1511,7 +1569,7 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
 }
 
 async function applyGiphyVisual(card, settings, query) {
-  const giphy = await searchGiphy(settings, query, card.serial);
+  const giphy = await searchGiphy(settings, query, card.serial, Boolean(card.pipeline?.themeSource));
   if (!giphy) return card;
   return {
     ...card,
@@ -1523,7 +1581,7 @@ async function applyGiphyVisual(card, settings, query) {
   };
 }
 
-async function searchGiphy(settings, query, seedSource) {
+async function searchGiphy(settings, query, seedSource, preferTopResult = false) {
   const apiKey = settings.giphyKey?.trim();
   if (!apiKey || !query?.trim()) return null;
 
@@ -1542,7 +1600,7 @@ async function searchGiphy(settings, query, seedSource) {
     const results = Array.isArray(data.data) ? data.data.filter((item) => item?.images) : [];
     if (!results.length) return null;
 
-    const index = hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
+    const index = preferTopResult ? 0 : hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
     const item = results[index];
     const image =
       item.images.downsized_large?.url ||
@@ -1560,7 +1618,36 @@ async function searchGiphy(settings, query, seedSource) {
   }
 }
 
-function buildFallbackImageQuery(card, lesson, path, settings = {}) {
+function pickRewardTheme(settings, seedSource) {
+  const taste = String(settings.rewardTaste || "").toLowerCase();
+  const matches = rewardThemes.filter((theme) => theme.match.some((token) => taste.includes(token)));
+  if (!matches.length) return null;
+  return matches[hashSeed(String(seedSource || taste)) % matches.length];
+}
+
+function applyRewardTheme(card, theme) {
+  return {
+    ...card,
+    id: theme.id,
+    name: theme.name,
+    type: theme.type,
+    art: theme.art,
+    line: theme.line,
+    lineSource: `Locked ${theme.name} theme`,
+    verified: true,
+    flavor: theme.flavor,
+    visualPrompt: theme.art,
+    imageQuery: theme.imageQuery,
+    pipeline: {
+      ...card.pipeline,
+      themeSource: "locked reward taste",
+      imageQuerySource: theme.imageQuery,
+    },
+  };
+}
+
+function buildFallbackImageQuery(card, lesson, path, settings = {}, rewardTheme = null) {
+  if (rewardTheme?.imageQuery) return rewardTheme.imageQuery;
   return [
     settings.rewardTaste,
     card.type,
