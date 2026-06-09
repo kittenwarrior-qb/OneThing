@@ -206,12 +206,16 @@ body {
 
 .vault-preview-frame {
   display: grid;
+  width: 100%;
+  max-width: 300px;
   min-height: 360px;
+  justify-self: end;
   place-items: center;
 }
 
 .vault-preview-frame > * {
   width: 100%;
+  max-width: 300px;
 }
 
 .collection-section {
@@ -228,8 +232,10 @@ body {
 
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 280px));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 240px));
   gap: 18px;
+  align-items: start;
+  justify-items: center;
 }
 
 .empty-collection {
@@ -426,6 +432,7 @@ body {
   display: flex;
   isolation: isolate;
   width: 100%;
+  max-width: 320px;
   aspect-ratio: 5 / 7;
   min-height: 0;
   flex-direction: column;
@@ -443,6 +450,7 @@ body {
 .card-skeleton {
   display: grid;
   width: 100%;
+  max-width: 320px;
   aspect-ratio: 5 / 7;
   min-height: 0;
   gap: 14px;
@@ -557,7 +565,7 @@ body {
   gap: 12px;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.64rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: rgba(255, 248, 232, 0.86);
 }
@@ -633,7 +641,7 @@ body {
 
 .collect-quote span {
   display: block;
-  font-size: clamp(1rem, 2.4vw, 1.28rem);
+  font-size: clamp(0.96rem, 2.1vw, 1.16rem);
   font-weight: 900;
   line-height: 1.12;
 }
@@ -652,7 +660,7 @@ body {
 .collect-title-strip h3 {
   margin: 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(1.18rem, 2.6vw, 1.42rem);
+  font-size: clamp(1.04rem, 2.1vw, 1.24rem);
   font-weight: 600;
   color: #fff8e8;
 }
@@ -661,7 +669,7 @@ body {
   margin: 4px 0 0;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: rgba(255, 248, 232, 0.72);
 }

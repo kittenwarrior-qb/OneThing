@@ -216,6 +216,77 @@ const raritySerialPrefix = {
   Legend: "L",
 };
 
+const visualPacks = {
+  Reaction: [
+    {
+      name: "chaotic sticker face",
+      colors: ["#ff4fd8", "#ffe66d", "#4df5ff"],
+      symbol: "!",
+      mood: "chaotic gen z cartoon reaction",
+    },
+    {
+      name: "side eye energy",
+      colors: ["#7c3aed", "#22d3ee", "#f8fafc"],
+      symbol: "?",
+      mood: "funny side eye cartoon sticker",
+    },
+  ],
+  Algorithm: [
+    {
+      name: "neon cursor loop",
+      colors: ["#14f195", "#0ea5e9", "#111827"],
+      symbol: "</>",
+      mood: "coding neon mascot sticker",
+    },
+    {
+      name: "window swipe",
+      colors: ["#38bdf8", "#a7f3d0", "#0f172a"],
+      symbol: "[]",
+      mood: "sliding window cartoon interface",
+    },
+  ],
+  Mindset: [
+    {
+      name: "tiny comeback",
+      colors: ["#fb7185", "#fde68a", "#1f2937"],
+      symbol: "UP",
+      mood: "soft motivational cartoon sticker",
+    },
+  ],
+  Identity: [
+    {
+      name: "return arc",
+      colors: ["#f97316", "#ec4899", "#111827"],
+      symbol: "↺",
+      mood: "comeback arc anime sticker",
+    },
+  ],
+  Science: [
+    {
+      name: "brain spark",
+      colors: ["#facc15", "#60a5fa", "#111827"],
+      symbol: "∑",
+      mood: "science doodle sticker",
+    },
+  ],
+  Physics: [
+    {
+      name: "brain spark",
+      colors: ["#facc15", "#60a5fa", "#111827"],
+      symbol: "∑",
+      mood: "science doodle sticker",
+    },
+  ],
+  Heroic: [
+    {
+      name: "main character mode",
+      colors: ["#ef4444", "#f59e0b", "#111827"],
+      symbol: "★",
+      mood: "heroic original cartoon sticker",
+    },
+  ],
+};
+
 const navTabs = [
   { key: "today", labelKey: "todayTab", icon: <ListChecks size={16} /> },
   { key: "paths", labelKey: "pathsTab", icon: <BookOpen size={16} /> },
@@ -1305,12 +1376,13 @@ function getMonthDays(history) {
 
 async function generateCardForLesson({ lesson, path, settings, preview }) {
   const localCard = drawCard();
-  const fallbackImagePrompt = enhanceCardImagePrompt(localCard.visualPrompt, localCard.line);
+  const fallbackVisual = pickVisualForType(localCard.type, localCard.serial);
+  const fallbackImagePrompt = enhanceCardImagePrompt(fallbackVisual.mood, localCard.line);
   const fallback = {
     ...localCard,
-    imageUrl: buildGeneratedImageUrl(fallbackImagePrompt, localCard.serial),
-    imageName: "AI reward visual",
-    imageSource: "Seeded high-resolution visual",
+    imageUrl: buildStickerDataUrl(fallbackVisual, localCard.rarity, localCard.serial),
+    imageName: fallbackVisual.name,
+    imageSource: "OneThing sticker pack",
     visualPrompt: fallbackImagePrompt,
     generatedBy: "local",
   };
@@ -1354,6 +1426,8 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     const text = data.choices?.[0]?.message?.content || "";
     const recipe = JSON.parse(text.replace(/```json|```/g, "").trim());
 
+    const cardType = normalizeCardType(recipe.type || fallback.type);
+    const visual = pickVisualForType(cardType, `${fallback.serial}-${recipe.name || ""}-${recipe.line || ""}`);
     const visualPrompt = enhanceCardImagePrompt(
       String(recipe.visualPrompt || fallback.visualPrompt).slice(0, 220),
       String(recipe.line || fallback.line).slice(0, 90),
@@ -1362,14 +1436,14 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
     return {
       ...fallback,
       name: String(recipe.name || fallback.name).slice(0, 42),
-      type: String(recipe.type || fallback.type).slice(0, 18),
+      type: cardType,
       art: String(recipe.art || fallback.art).slice(0, 56),
       line: String(recipe.line || fallback.line).slice(0, 90),
       flavor: String(recipe.flavor || fallback.flavor).slice(0, 180),
       visualPrompt,
-      imageUrl: buildGeneratedImageUrl(visualPrompt, fallback.serial),
-      imageName: "AI reward visual",
-      imageSource: "Seeded high-resolution visual",
+      imageUrl: buildStickerDataUrl(visual, fallback.rarity, fallback.serial),
+      imageName: visual.name,
+      imageSource: "OneThing sticker pack",
       verified: Boolean(recipe.verified),
       lineSource: recipe.verified ? "OpenRouter generated, marked verified" : "OpenRouter generated, unverified",
       generatedBy: "openrouter",
@@ -1382,16 +1456,89 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
 function enhanceCardImagePrompt(prompt, line) {
   return [
     prompt,
-    "premium vertical collectible trading card artwork",
-    "modern cinematic lighting, high resolution, detailed subject, rich contrast",
-    "no blank white area, no caption box, no text, no watermark",
+    "personal OneThing cartoon reward sticker",
+    "modern gen z colors, bold readable shape, no random landscape photo",
+    "no blank white area, no watermark",
     `mood inspired by: ${line}`,
   ].join(", ");
 }
 
-function buildGeneratedImageUrl(prompt, seedSource) {
-  const seed = hashSeed(seedSource || prompt);
-  return `https://picsum.photos/seed/onething-${seed}/768/1024`;
+function normalizeCardType(type) {
+  const normalized = String(type || "").trim();
+  if (normalized === "Meme") return "Reaction";
+  return visualPacks[normalized] ? normalized : "Mindset";
+}
+
+function pickVisualForType(type, seedSource) {
+  const pack = visualPacks[normalizeCardType(type)] || visualPacks.Mindset;
+  const seed = hashSeed(String(seedSource || type || "onething"));
+  return pack[seed % pack.length];
+}
+
+function buildStickerDataUrl(visual, rarity, seedSource) {
+  const seed = hashSeed(String(seedSource || visual.name));
+  const [primary, accent, ink] = visual.colors;
+  const tilt = (seed % 13) - 6;
+  const eyeShift = (seed % 9) - 4;
+  const rarityGlow = {
+    Common: "#d7d0c5",
+    Rare: "#50f2bf",
+    Epic: "#c084fc",
+    Legend: "#fbbf24",
+  }[rarity] || "#d7d0c5";
+  const title = escapeSvgText(visual.name.toUpperCase());
+  const symbol = escapeSvgText(visual.symbol);
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 1024">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${primary}"/>
+          <stop offset="0.52" stop-color="${accent}"/>
+          <stop offset="1" stop-color="${ink}"/>
+        </linearGradient>
+        <radialGradient id="shine" cx="36%" cy="22%" r="72%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.88"/>
+          <stop offset="0.34" stop-color="#ffffff" stop-opacity="0.2"/>
+          <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="26" stdDeviation="18" flood-color="#000000" flood-opacity="0.28"/>
+        </filter>
+        <pattern id="dots" width="42" height="42" patternUnits="userSpaceOnUse">
+          <circle cx="7" cy="7" r="2.2" fill="#ffffff" opacity="0.22"/>
+        </pattern>
+      </defs>
+      <rect width="768" height="1024" fill="url(#bg)"/>
+      <rect width="768" height="1024" fill="url(#dots)" opacity="0.52"/>
+      <circle cx="144" cy="128" r="176" fill="#ffffff" opacity="0.18"/>
+      <circle cx="666" cy="262" r="212" fill="#000000" opacity="0.16"/>
+      <circle cx="624" cy="846" r="260" fill="${rarityGlow}" opacity="0.2"/>
+      <g filter="url(#shadow)" transform="rotate(${tilt} 384 472)">
+        <path d="M168 248 C166 178 224 126 302 146 C342 72 468 76 500 160 C594 152 652 220 624 306 C700 354 680 470 596 494 C606 584 520 646 444 600 C386 676 268 640 268 546 C176 538 126 456 176 382 C126 332 126 274 168 248 Z" fill="#fffdf8"/>
+        <path d="M188 268 C188 210 238 168 310 184 C350 118 452 122 482 188 C564 182 610 238 588 310 C652 350 634 444 562 464 C570 540 500 592 438 552 C386 616 292 586 290 510 C214 500 174 434 214 376 C174 334 176 292 188 268 Z" fill="#111827" opacity="0.08"/>
+        <ellipse cx="318" cy="382" rx="36" ry="46" fill="#111827"/>
+        <ellipse cx="${450 + eyeShift}" cy="382" rx="36" ry="46" fill="#111827"/>
+        <circle cx="330" cy="366" r="10" fill="#ffffff"/>
+        <circle cx="${462 + eyeShift}" cy="366" r="10" fill="#ffffff"/>
+        <path d="M332 482 C370 522 426 522 468 482" fill="none" stroke="#111827" stroke-width="20" stroke-linecap="round"/>
+        <text x="384" y="284" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="900" fill="#111827">${symbol}</text>
+      </g>
+      <rect x="58" y="822" width="652" height="118" rx="34" fill="#070707" opacity="0.72"/>
+      <text x="384" y="872" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="900" fill="#fffdf8">${title}</text>
+      <text x="384" y="912" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700" fill="#fffdf8" opacity="0.72">PERSONAL STICKER VISUAL</text>
+      <rect width="768" height="1024" fill="url(#shine)"/>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function escapeSvgText(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function drawCard() {
