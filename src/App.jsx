@@ -333,13 +333,17 @@ const copy = {
     previewOnly: "Preview only. This card is not saved.",
     previewEmpty: "Use Test pull to preview the generator before you earn a real card.",
     pipeline: "card pipeline",
-    pipelineBody: "Cards now use a coherent recipe: rarity -> archetype -> line -> matching art prompt -> Pollinations image URL. Random Imgflip memes are disabled.",
+    pipelineBody: "Cards now use: rarity -> AI recipe/search query -> GIPHY image/GIF -> local sticker only if search fails.",
     quoteNote: "Famous quotes should come from a verified quote pack. AI-generated lines are allowed later, but must be marked unverified.",
     openrouter: "openrouter",
     taskCoach: "Task coach key",
+    giphy: "giphy",
+    visualSearch: "Reward visual search",
+    rewardTaste: "Reward taste",
+    rewardTastePlaceholder: "Spider-Man, The Boys, football cards, anime reactions, Gen Z memes...",
     apiKey: "API key",
     model: "Model",
-    keyHint: "Key is stored only in this browser's localStorage for now. Do not use this on a shared machine.",
+    keyHint: "Keys are stored only in this browser's localStorage for now. Do not use this on a shared machine.",
     backup: "backup",
     backupTitle: "Do not lose the data",
     backupHint: "LocalStorage is enough for MVP, but browser cleanup can wipe it. Export JSON after serious progress.",
@@ -355,6 +359,7 @@ const copy = {
     previewOpenRouterStatus: "Preview card generated with OpenRouter.",
     previewFallbackStatus: "Preview card used local fallback.",
     rewardMintedStatus: "Reward minted.",
+    visualFallbackStatus: "No GIPHY image found, so the card used the emergency sticker fallback.",
     addOpenRouterKeyStatus: "Add OpenRouter key in Settings first.",
     generatingTaskStatus: "Generating a stricter task...",
     cardsUnit: "cards",
@@ -397,10 +402,14 @@ const copy = {
     previewOnly: "Chỉ xem thử. Thẻ này không được lưu.",
     previewEmpty: "Bấm Test rút thẻ để xem generator trước khi nhận thẻ thật.",
     pipeline: "logic tạo thẻ",
-    pipelineBody: "Thẻ giờ đi theo recipe nhất quán: rarity -> archetype -> line -> art prompt khớp nội dung -> ảnh Pollinations. Đã tắt random Imgflip meme.",
+    pipelineBody: "Thẻ giờ đi theo: rarity -> AI recipe/search query -> ảnh/GIF GIPHY -> chỉ fallback sticker nếu search fail.",
     quoteNote: "Quote người nổi tiếng nên lấy từ quote pack đã verify. Câu do AI tạo sau này phải đánh dấu là chưa kiểm chứng.",
     openrouter: "openrouter",
     taskCoach: "Key cho task coach",
+    giphy: "giphy",
+    visualSearch: "Tìm ảnh/GIF thẻ thưởng",
+    rewardTaste: "Gu phần thưởng",
+    rewardTastePlaceholder: "Spider-Man, The Boys, thẻ bóng đá, anime reaction, meme Gen Z...",
     apiKey: "API key",
     model: "Model",
     keyHint: "Key hiện chỉ lưu trong localStorage của browser này. Đừng dùng trên máy chung.",
@@ -419,6 +428,7 @@ const copy = {
     previewOpenRouterStatus: "Thẻ preview được tạo bằng OpenRouter.",
     previewFallbackStatus: "Thẻ preview dùng fallback local.",
     rewardMintedStatus: "Đã mint thẻ thưởng.",
+    visualFallbackStatus: "Không tìm được ảnh GIPHY nên thẻ phải dùng sticker fallback khẩn cấp.",
     addOpenRouterKeyStatus: "Thêm OpenRouter key trong Cài đặt trước.",
     generatingTaskStatus: "Đang tạo task chặt hơn...",
     cardsUnit: "thẻ",
@@ -432,6 +442,8 @@ function createDefaultState() {
     settings: {
       openRouterKey: "",
       openRouterModel: "openai/gpt-oss-20b:free",
+      giphyKey: "",
+      rewardTaste: "Spider-Man, superhero quotes, The Boys reactions, football card energy, anime reactions, Gen Z memes",
       dailyMinutes: 70,
       language: "en",
       theme: "light",
@@ -601,7 +613,7 @@ function App() {
         draft.collection.unshift(mintedCard);
         return draft;
       });
-      setAiStatus(t.rewardMintedStatus);
+      setAiStatus(mintedCard.imageSource === "GIPHY GIF Search" ? t.rewardMintedStatus : t.visualFallbackStatus);
       setActiveTab("vault");
     } finally {
       setIsPulling(false);
@@ -627,7 +639,11 @@ function App() {
         sourceLessonId: activeLesson?.id || "preview",
         sourceLessonTitle: activeLesson?.title || "Preview Pull",
       });
-      setAiStatus(card.generatedBy === "openrouter" ? t.previewOpenRouterStatus : t.previewFallbackStatus);
+      if (card.imageSource !== "GIPHY GIF Search") {
+        setAiStatus(t.visualFallbackStatus);
+      } else {
+        setAiStatus(card.generatedBy?.includes("openrouter") ? t.previewOpenRouterStatus : t.previewFallbackStatus);
+      }
     } finally {
       setIsPreviewing(false);
     }
@@ -1149,6 +1165,35 @@ function App() {
                     })
                   }
                 />
+                <Separator />
+                <p className="mono-label text-[var(--rust)]">{t.giphy}</p>
+                <h2 className="serif-title text-3xl font-semibold">{t.visualSearch}</h2>
+                <label className="field-label">{t.apiKey}</label>
+                <input
+                  className="plain-input"
+                  type="password"
+                  placeholder="Paste GIPHY API key"
+                  value={state.settings.giphyKey}
+                  onChange={(event) =>
+                    updateState((draft) => {
+                      draft.settings.giphyKey = event.target.value;
+                      return draft;
+                    })
+                  }
+                />
+                <label className="field-label">{t.rewardTaste}</label>
+                <textarea
+                  className="plain-textarea"
+                  rows={4}
+                  placeholder={t.rewardTastePlaceholder}
+                  value={state.settings.rewardTaste}
+                  onChange={(event) =>
+                    updateState((draft) => {
+                      draft.settings.rewardTaste = event.target.value;
+                      return draft;
+                    })
+                  }
+                />
                 <p className="text-sm text-[var(--muted)]">
                   {t.keyHint}
                 </p>
@@ -1265,6 +1310,7 @@ function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
     <motion.article
       className="collect-card"
       data-rarity={card.rarity}
+      data-visual-source={card.imageSource === "OneThing sticker pack" ? "sticker" : "media"}
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={{ y: -4, rotateX: 1.2, rotateY: -1.2 }}
@@ -1378,28 +1424,36 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
   const localCard = drawCard();
   const fallbackVisual = pickVisualForType(localCard.type, localCard.serial);
   const fallbackImagePrompt = enhanceCardImagePrompt(fallbackVisual.mood, localCard.line);
+  const fallbackImageQuery = buildFallbackImageQuery(localCard, lesson, path, settings);
   const fallback = {
     ...localCard,
     imageUrl: buildStickerDataUrl(fallbackVisual, localCard.rarity, localCard.serial),
     imageName: fallbackVisual.name,
     imageSource: "OneThing sticker pack",
+    imageQuery: fallbackImageQuery,
     visualPrompt: fallbackImagePrompt,
     generatedBy: "local",
   };
 
-  if (!settings.openRouterKey?.trim()) return fallback;
+  if (!settings.openRouterKey?.trim()) {
+    return applyGiphyVisual(fallback, settings, fallbackImageQuery);
+  }
 
   try {
     const prompt = [
       "Create one collectible study reward card recipe.",
       "Return strict JSON only with this shape:",
-      '{"name":"...","type":"Reaction|Algorithm|Mindset|Heroic|Science","line":"short punchy line","flavor":"1 sentence flavor text","art":"short art tag","visualPrompt":"image prompt, no text in image, no copyrighted characters","verified":false}',
-      "The card can be meme-ish, cool, philosophical, or anime-inspired, but do not use copyrighted catchphrases or existing characters. Prefer original lines.",
+      '{"name":"...","type":"Reaction|Algorithm|Mindset|Heroic|Science","line":"short punchy line","flavor":"1 sentence flavor text","art":"short art tag","imageQuery":"search query for a matching GIF or meme image","visualPrompt":"fallback sticker mood","verified":false}',
+      "The card can be meme-ish, cool, philosophical, anime-inspired, or pop-culture aware.",
+      "Do not generate an image. Create a precise imageQuery for finding an existing GIF/image.",
+      "If you use a famous quote or catchphrase, the imageQuery must match the speaker/source. Example: line about great power -> imageQuery should mention spider man uncle ben responsibility.",
+      "Prefer widely understandable modern reaction, anime, superhero, football, or Gen Z meme references.",
       "Keep it suitable for a personal study app.",
       `Current path: ${path?.title || "Unknown"}`,
       `Current lesson: ${lesson?.title || "Preview"}`,
       `Lesson goal: ${lesson?.goal || ""}`,
-      "The visualPrompt must match the line and name. The final image should look modern, premium, high-resolution, no white caption area.",
+      `User reward taste: ${settings.rewardTaste || "Gen Z memes, anime reactions, superheroes, football cards"}`,
+      "Keep line short because it overlays on the image. Avoid long explanations.",
       preview ? "This is a preview pull, not a real reward." : "This is an earned reward.",
     ].join("\n");
 
@@ -1433,7 +1487,7 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       String(recipe.line || fallback.line).slice(0, 90),
     );
 
-    return {
+    const generatedCard = {
       ...fallback,
       name: String(recipe.name || fallback.name).slice(0, 42),
       type: cardType,
@@ -1441,6 +1495,7 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       line: String(recipe.line || fallback.line).slice(0, 90),
       flavor: String(recipe.flavor || fallback.flavor).slice(0, 180),
       visualPrompt,
+      imageQuery: String(recipe.imageQuery || fallback.imageQuery).slice(0, 140),
       imageUrl: buildStickerDataUrl(visual, fallback.rarity, fallback.serial),
       imageName: visual.name,
       imageSource: "OneThing sticker pack",
@@ -1448,9 +1503,75 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
       lineSource: recipe.verified ? "OpenRouter generated, marked verified" : "OpenRouter generated, unverified",
       generatedBy: "openrouter",
     };
+
+    return applyGiphyVisual(generatedCard, settings, generatedCard.imageQuery);
   } catch {
-    return fallback;
+    return applyGiphyVisual(fallback, settings, fallbackImageQuery);
   }
+}
+
+async function applyGiphyVisual(card, settings, query) {
+  const giphy = await searchGiphy(settings, query, card.serial);
+  if (!giphy) return card;
+  return {
+    ...card,
+    imageUrl: giphy.url,
+    imageName: giphy.title || card.imageName,
+    imageSource: "GIPHY GIF Search",
+    imageQuery: query,
+    generatedBy: card.generatedBy === "openrouter" ? "openrouter+giphy" : "giphy",
+  };
+}
+
+async function searchGiphy(settings, query, seedSource) {
+  const apiKey = settings.giphyKey?.trim();
+  if (!apiKey || !query?.trim()) return null;
+
+  try {
+    const url = new URL("https://api.giphy.com/v1/gifs/search");
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("q", query.trim());
+    url.searchParams.set("limit", "12");
+    url.searchParams.set("rating", "pg-13");
+    url.searchParams.set("lang", "en");
+    url.searchParams.set("bundle", "messaging_non_clips");
+
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    const results = Array.isArray(data.data) ? data.data.filter((item) => item?.images) : [];
+    if (!results.length) return null;
+
+    const index = hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
+    const item = results[index];
+    const image =
+      item.images.downsized_large?.url ||
+      item.images.downsized_medium?.url ||
+      item.images.original?.webp ||
+      item.images.original?.url;
+    if (!image) return null;
+
+    return {
+      url: image,
+      title: String(item.title || query).replace(/\s*GIF$/i, "").slice(0, 56),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildFallbackImageQuery(card, lesson, path, settings = {}) {
+  return [
+    settings.rewardTaste,
+    card.type,
+    card.line,
+    lesson?.title && "study win",
+    path?.title && "reaction",
+    "reaction gif meme",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 140);
 }
 
 function enhanceCardImagePrompt(prompt, line) {
@@ -1514,6 +1635,7 @@ function buildStickerDataUrl(visual, rarity, seedSource) {
       <circle cx="144" cy="128" r="176" fill="#ffffff" opacity="0.18"/>
       <circle cx="666" cy="262" r="212" fill="#000000" opacity="0.16"/>
       <circle cx="624" cy="846" r="260" fill="${rarityGlow}" opacity="0.2"/>
+      <g transform="translate(84 88) scale(0.78)">
       <g filter="url(#shadow)" transform="rotate(${tilt} 384 472)">
         <path d="M168 248 C166 178 224 126 302 146 C342 72 468 76 500 160 C594 152 652 220 624 306 C700 354 680 470 596 494 C606 584 520 646 444 600 C386 676 268 640 268 546 C176 538 126 456 176 382 C126 332 126 274 168 248 Z" fill="#fffdf8"/>
         <path d="M188 268 C188 210 238 168 310 184 C350 118 452 122 482 188 C564 182 610 238 588 310 C652 350 634 444 562 464 C570 540 500 592 438 552 C386 616 292 586 290 510 C214 500 174 434 214 376 C174 334 176 292 188 268 Z" fill="#111827" opacity="0.08"/>
@@ -1523,6 +1645,7 @@ function buildStickerDataUrl(visual, rarity, seedSource) {
         <circle cx="${462 + eyeShift}" cy="366" r="10" fill="#ffffff"/>
         <path d="M332 482 C370 522 426 522 468 482" fill="none" stroke="#111827" stroke-width="20" stroke-linecap="round"/>
         <text x="384" y="284" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="900" fill="#111827">${symbol}</text>
+      </g>
       </g>
       <rect x="58" y="822" width="652" height="118" rx="34" fill="#070707" opacity="0.72"/>
       <text x="384" y="872" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="900" fill="#fffdf8">${title}</text>
