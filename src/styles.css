@@ -646,11 +646,17 @@ body {
   line-height: 1.1;
 }
 
-.collect-missing-art span {
+.collect-missing-art span,
+.collect-missing-art em {
   max-width: 100%;
   overflow-wrap: anywhere;
   font-size: 0.76rem;
   color: rgba(255, 248, 232, 0.68);
+}
+
+.collect-missing-art em {
+  font-style: normal;
+  color: rgba(255, 187, 153, 0.86);
 }
 
 @media (prefers-reduced-motion: reduce) {

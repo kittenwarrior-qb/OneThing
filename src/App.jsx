@@ -1398,6 +1398,7 @@ function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
             <ImagePlus size={34} />
             <strong>Needs GIPHY media</strong>
             <span>{card.imageQuery}</span>
+            {card.imageError && <em>{card.imageError}</em>}
           </div>
         ) : (
           <div className="collect-fallback-art">
@@ -1582,17 +1583,18 @@ async function generateCardForLesson({ lesson, path, settings, preview }) {
 
 async function applyGiphyVisual(card, settings, query) {
   const giphy = await searchGiphy(settings, query, card.serial, Boolean(card.pipeline?.themeSource));
-  if (!giphy && card.pipeline?.themeSource) {
+  if (!giphy?.url && card.pipeline?.themeSource) {
     return {
       ...card,
       imageUrl: "",
       imageName: "Needs GIPHY media",
       imageSource: "Missing GIPHY media",
       imageQuery: query,
+      imageError: giphy?.error || "GIPHY search did not return media.",
       mediaRequired: true,
     };
   }
-  if (!giphy) return card;
+  if (!giphy?.url) return card;
   return {
     ...card,
     imageUrl: giphy.url,
@@ -1604,23 +1606,32 @@ async function applyGiphyVisual(card, settings, query) {
 }
 
 async function searchGiphy(settings, query, seedSource, preferTopResult = false) {
-  const apiKey = settings.giphyKey?.trim();
-  if (!apiKey || !query?.trim()) return null;
+  const apiKey = getClientApiKey(settings.giphyKey, ["VITE_GIPHY_KEY", "VITE_GIPHY_API_KEY"]);
+  if (!apiKey) return { error: "Missing GIPHY key in Settings or VITE_GIPHY_KEY." };
+  if (!query?.trim()) return { error: "Missing image query." };
 
   try {
-    const url = new URL("https://api.giphy.com/v1/gifs/search");
-    url.searchParams.set("api_key", apiKey);
-    url.searchParams.set("q", query.trim());
-    url.searchParams.set("limit", "12");
-    url.searchParams.set("rating", "pg-13");
-    url.searchParams.set("lang", "en");
-    url.searchParams.set("bundle", "messaging_non_clips");
+    const results = [];
+    const queries = buildGiphyQueryVariants(query);
+    for (const itemQuery of queries) {
+      const url = new URL("https://api.giphy.com/v1/gifs/search");
+      url.searchParams.set("api_key", apiKey);
+      url.searchParams.set("q", itemQuery);
+      url.searchParams.set("limit", "12");
+      url.searchParams.set("rating", "pg-13");
+      url.searchParams.set("lang", "en");
 
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
-    const results = Array.isArray(data.data) ? data.data.filter((item) => item?.images) : [];
-    if (!results.length) return null;
+      const response = await fetch(url);
+      if (!response.ok) return { error: `GIPHY HTTP ${response.status}. Check that the key is valid.` };
+      const data = await response.json();
+      const found = Array.isArray(data.data) ? data.data.filter((item) => item?.images) : [];
+      if (found.length) {
+        results.push(...found);
+        break;
+      }
+    }
+
+    if (!results.length) return { error: `No GIPHY results for "${query}".` };
 
     const index = preferTopResult ? 0 : hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
     const item = results[index];
@@ -1629,15 +1640,37 @@ async function searchGiphy(settings, query, seedSource, preferTopResult = false)
       item.images.downsized_medium?.url ||
       item.images.original?.webp ||
       item.images.original?.url;
-    if (!image) return null;
+    if (!image) return { error: "GIPHY result had no usable image URL." };
 
     return {
       url: image,
       title: String(item.title || query).replace(/\s*GIF$/i, "").slice(0, 56),
     };
   } catch {
-    return null;
+    return { error: "GIPHY request failed. Check network/CORS/key." };
   }
+}
+
+function getClientApiKey(settingValue, envNames) {
+  const settingKey = String(settingValue || "").trim();
+  if (settingKey) return settingKey;
+  for (const envName of envNames) {
+    const envKey = String(import.meta.env?.[envName] || "").trim();
+    if (envKey) return envKey;
+  }
+  return "";
+}
+
+function buildGiphyQueryVariants(query) {
+  const clean = String(query || "").trim();
+  const variants = [clean];
+  if (/spider[\s-]?man|uncle ben/i.test(clean)) {
+    variants.push("spider man responsibility gif", "spiderman uncle ben gif", "spider man quote gif");
+  }
+  if (/billy butcher|the boys|oi/i.test(clean)) {
+    variants.push("billy butcher gif", "the boys butcher reaction gif");
+  }
+  return [...new Set(variants.filter(Boolean))];
 }
 
 function pickRewardTheme(settings, seedSource) {
