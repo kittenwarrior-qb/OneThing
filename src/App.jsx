@@ -394,6 +394,9 @@ const copy = {
     visualSearch: "Reward visual search",
     rewardTaste: "Reward taste",
     rewardTastePlaceholder: "Spider-Man, The Boys, football cards, anime reactions, Gen Z memes...",
+    testGiphy: "Test GIPHY",
+    testingGiphyStatus: "Testing GIPHY media search...",
+    giphyOkStatus: "GIPHY is working. Spider-Man media is available.",
     apiKey: "API key",
     model: "Model",
     keyHint: "Keys are stored only in this browser's localStorage for now. Do not use this on a shared machine.",
@@ -463,6 +466,9 @@ const copy = {
     visualSearch: "Tìm ảnh/GIF thẻ thưởng",
     rewardTaste: "Gu phần thưởng",
     rewardTastePlaceholder: "Spider-Man, The Boys, thẻ bóng đá, anime reaction, meme Gen Z...",
+    testGiphy: "Test GIPHY",
+    testingGiphyStatus: "Đang test GIPHY media search...",
+    giphyOkStatus: "GIPHY chạy được. Có media Spider-Man.",
     apiKey: "API key",
     model: "Model",
     keyHint: "Key hiện chỉ lưu trong localStorage của browser này. Đừng dùng trên máy chung.",
@@ -493,9 +499,9 @@ function createDefaultState() {
   return {
     version: 2,
     settings: {
-      openRouterKey: "",
+      openRouterKey: getClientApiKey("", ["VITE_OPENROUTER_KEY"]),
       openRouterModel: "openai/gpt-oss-20b:free",
-      giphyKey: "",
+      giphyKey: getClientApiKey("", ["VITE_GIPHY_KEY", "VITE_GIPHY_API_KEY"]),
       rewardTaste: "Spider-Man, superhero quotes, The Boys reactions, football card energy, anime reactions, Gen Z memes",
       dailyMinutes: 70,
       language: "en",
@@ -527,7 +533,13 @@ function loadState() {
       ...parsed.settings,
     };
     if (parsed.settings.geminiKey && !parsed.settings.openRouterKey) {
-      parsed.settings.openRouterKey = "";
+      parsed.settings.openRouterKey = getClientApiKey("", ["VITE_OPENROUTER_KEY"]);
+    }
+    if (!parsed.settings.openRouterKey) {
+      parsed.settings.openRouterKey = getClientApiKey("", ["VITE_OPENROUTER_KEY"]);
+    }
+    if (!parsed.settings.giphyKey) {
+      parsed.settings.giphyKey = getClientApiKey("", ["VITE_GIPHY_KEY", "VITE_GIPHY_API_KEY"]);
     }
     if (parsed.today.date !== todayKey()) {
       return {
@@ -705,6 +717,17 @@ function App() {
     } finally {
       setIsPreviewing(false);
     }
+  };
+
+  const testGiphy = async () => {
+    setAiStatus(t.testingGiphyStatus);
+    const result = await searchGiphy(
+      state.settings,
+      "spider man uncle ben great power responsibility gif",
+      "settings-test",
+      true,
+    );
+    setAiStatus(result?.url ? t.giphyOkStatus : result?.error || t.visualFallbackStatus);
   };
 
   const addPath = () => {
@@ -1252,6 +1275,9 @@ function App() {
                     })
                   }
                 />
+                <Button radius="full" variant="flat" startContent={<ImagePlus size={17} />} onPress={testGiphy}>
+                  {t.testGiphy}
+                </Button>
                 <p className="text-sm text-[var(--muted)]">
                   {t.keyHint}
                 </p>
