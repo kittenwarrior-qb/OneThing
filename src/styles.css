@@ -427,6 +427,25 @@ body {
   border-color: #c8bda8;
 }
 
+.rarity-settings {
+  display: grid;
+  gap: 10px;
+}
+
+.rarity-setting-row {
+  display: grid;
+  grid-template-columns: 1fr 92px;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.rarity-setting-row .plain-input {
+  padding: 10px 12px;
+  text-align: right;
+}
+
 .collect-card {
   position: relative;
   display: grid;
@@ -495,21 +514,43 @@ body {
 .collect-card[data-rarity="Common"] {
   --foil-a: #d6d0c4;
   --foil-b: #857d70;
+  --card-glow: rgba(214, 208, 196, 0.18);
+  --media-inset: 12px;
+  --media-radius: 18px;
+  --shine-opacity: 0.28;
 }
 
 .collect-card[data-rarity="Rare"] {
   --foil-a: #77f2c1;
   --foil-b: #127a62;
+  --card-glow: rgba(80, 242, 191, 0.28);
+  --media-inset: 10px;
+  --media-radius: 20px;
+  --shine-opacity: 0.42;
 }
 
 .collect-card[data-rarity="Epic"] {
   --foil-a: #a78bfa;
   --foil-b: #f0abfc;
+  --card-glow: rgba(192, 132, 252, 0.34);
+  --media-inset: 8px;
+  --media-radius: 22px;
+  --shine-opacity: 0.58;
 }
 
 .collect-card[data-rarity="Legend"] {
   --foil-a: #fcd34d;
   --foil-b: #fb7185;
+  --card-glow: rgba(251, 191, 36, 0.42);
+  --media-inset: 6px;
+  --media-radius: 24px;
+  --shine-opacity: 0.78;
+}
+
+.collect-card[data-rarity="Rare"],
+.collect-card[data-rarity="Epic"],
+.collect-card[data-rarity="Legend"] {
+  box-shadow: 0 30px 100px rgba(24, 19, 12, 0.32), 0 0 44px var(--card-glow);
 }
 
 .collect-card::before {
@@ -534,8 +575,16 @@ body {
     linear-gradient(115deg, transparent 0 34%, rgba(255, 255, 255, 0.18) 44%, transparent 54% 100%),
     repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 7px);
   mix-blend-mode: screen;
-  opacity: 0.52;
+  opacity: var(--shine-opacity, 0.52);
   pointer-events: none;
+}
+
+.collect-card[data-rarity="Epic"]::after,
+.collect-card[data-rarity="Legend"]::after {
+  background:
+    radial-gradient(circle at 70% 16%, rgba(255, 255, 255, 0.34), transparent 18%),
+    linear-gradient(115deg, transparent 0 30%, rgba(255, 255, 255, 0.3) 42%, transparent 54% 100%),
+    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 7px);
 }
 
 .collect-bg {
@@ -595,16 +644,26 @@ body {
 
 .collect-card-art {
   position: absolute;
-  inset: 10px;
+  inset: var(--media-inset, 10px);
   z-index: 1;
   display: grid;
   width: auto;
   min-height: 0;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 20px;
+  border-radius: var(--media-radius, 20px);
   background: rgba(0, 0, 0, 0.16);
   overflow: hidden;
+}
+
+.collect-card[data-rarity="Legend"] .collect-card-art {
+  border-color: rgba(252, 211, 77, 0.46);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.collect-card[data-rarity="Epic"] .collect-quote span,
+.collect-card[data-rarity="Legend"] .collect-quote span {
+  font-size: clamp(1rem, 2.2vw, 1.18rem);
 }
 
 .collect-card[data-visual-source="media"] .collect-card-art {

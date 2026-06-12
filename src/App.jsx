@@ -99,6 +99,13 @@ const rarityTable = [
   { rarity: "Legend", weight: 3 },
 ];
 
+const defaultRarityWeights = {
+  Common: 58,
+  Rare: 28,
+  Epic: 11,
+  Legend: 3,
+};
+
 const cardArchetypes = [
   {
     id: "quiet-builder",
@@ -394,6 +401,8 @@ const copy = {
     visualSearch: "Reward visual search",
     rewardTaste: "Reward taste",
     rewardTastePlaceholder: "Spider-Man, The Boys, football cards, anime reactions, Gen Z memes...",
+    rarityRates: "Rarity rates",
+    rarityRatesHint: "Higher number means more likely. Set Legend low if you want real chase-card energy.",
     testGiphy: "Test GIPHY",
     testingGiphyStatus: "Testing GIPHY media search...",
     giphyOkStatus: "GIPHY is working. Spider-Man media is available.",
@@ -466,6 +475,8 @@ const copy = {
     visualSearch: "Tìm ảnh/GIF thẻ thưởng",
     rewardTaste: "Gu phần thưởng",
     rewardTastePlaceholder: "Spider-Man, The Boys, thẻ bóng đá, anime reaction, meme Gen Z...",
+    rarityRates: "Tỉ lệ độ hiếm",
+    rarityRatesHint: "Số càng cao càng dễ ra. Để Legend thấp nếu muốn cảm giác chase-card thật.",
     testGiphy: "Test GIPHY",
     testingGiphyStatus: "Đang test GIPHY media search...",
     giphyOkStatus: "GIPHY chạy được. Có media Spider-Man.",
@@ -503,6 +514,7 @@ function createDefaultState() {
       openRouterModel: "openai/gpt-oss-20b:free",
       giphyKey: getClientApiKey("", ["VITE_GIPHY_KEY", "VITE_GIPHY_API_KEY"]),
       rewardTaste: "Spider-Man, superhero quotes, The Boys reactions, football card energy, anime reactions, Gen Z memes",
+      rarityWeights: defaultRarityWeights,
       dailyMinutes: 70,
       language: "en",
       theme: "light",
@@ -531,6 +543,10 @@ function loadState() {
     parsed.settings = {
       ...createDefaultState().settings,
       ...parsed.settings,
+      rarityWeights: {
+        ...defaultRarityWeights,
+        ...(parsed.settings?.rarityWeights || {}),
+      },
     };
     if (parsed.settings.geminiKey && !parsed.settings.openRouterKey) {
       parsed.settings.openRouterKey = getClientApiKey("", ["VITE_OPENROUTER_KEY"]);
@@ -1278,6 +1294,33 @@ function App() {
                 <Button radius="full" variant="flat" startContent={<ImagePlus size={17} />} onPress={testGiphy}>
                   {t.testGiphy}
                 </Button>
+                <Separator />
+                <p className="mono-label text-[var(--rust)]">{t.rarityRates}</p>
+                <div className="rarity-settings">
+                  {Object.keys(defaultRarityWeights).map((rarity) => (
+                    <label className="rarity-setting-row" key={rarity}>
+                      <span>{rarity}</span>
+                      <input
+                        className="plain-input"
+                        min="0"
+                        max="100"
+                        type="number"
+                        value={state.settings.rarityWeights?.[rarity] ?? defaultRarityWeights[rarity]}
+                        onChange={(event) =>
+                          updateState((draft) => {
+                            draft.settings.rarityWeights = {
+                              ...defaultRarityWeights,
+                              ...(draft.settings.rarityWeights || {}),
+                              [rarity]: Number(event.target.value),
+                            };
+                            return draft;
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <p className="text-sm text-[var(--muted)]">{t.rarityRatesHint}</p>
                 <p className="text-sm text-[var(--muted)]">
                   {t.keyHint}
                 </p>
@@ -1513,7 +1556,7 @@ function getMonthDays(history) {
 }
 
 async function generateCardForLesson({ lesson, path, settings, preview }) {
-  const localCard = drawCard();
+  const localCard = drawCard(settings);
   const rewardTheme = pickRewardTheme(settings, localCard.serial);
   const themedLocalCard = rewardTheme ? applyRewardTheme(localCard, rewardTheme) : localCard;
   const fallbackVisual = pickVisualForType(themedLocalCard.type, themedLocalCard.serial);
@@ -1853,8 +1896,8 @@ function escapeSvgText(value) {
     .replace(/>/g, "&gt;");
 }
 
-function drawCard() {
-  const rarity = weightedPick(rarityTable).rarity;
+function drawCard(settings = {}) {
+  const rarity = weightedPick(getRarityTable(settings)).rarity;
   const archetype = pickOne(cardArchetypes.filter((card) => card.allowedRarities.includes(rarity))) || cardArchetypes[0];
   const line = pickOne(linePacks[rarity]) || linePacks.Common[0];
   const flavor = pickOne(flavorPacks[archetype.type]) || "You completed the task, so this card exists.";
@@ -1879,6 +1922,16 @@ function drawCard() {
       artSource: "local prompt, no image API",
     },
   };
+}
+
+function getRarityTable(settings = {}) {
+  const weights = settings.rarityWeights || defaultRarityWeights;
+  const table = rarityTable.map((item) => ({
+    rarity: item.rarity,
+    weight: Math.max(0, Number(weights[item.rarity] ?? item.weight) || 0),
+  }));
+  const total = table.reduce((sum, item) => sum + item.weight, 0);
+  return total > 0 ? table : rarityTable;
 }
 
 function weightedPick(items) {
