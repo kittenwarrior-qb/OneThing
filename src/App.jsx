@@ -296,7 +296,7 @@ const rewardThemes = [
     line: "With great power comes responsibility.",
     flavor: "A classic hero reminder for one completed checkbox.",
     art: "Spider-Man / Uncle Ben source match",
-    imageQuery: "spider man uncle ben great power responsibility gif",
+    imageQuery: "spiderman uncle ben",
   },
   {
     id: "the-boys",
@@ -723,7 +723,7 @@ function App() {
     setAiStatus(t.testingGiphyStatus);
     const result = await searchGiphy(
       state.settings,
-      "spider man uncle ben great power responsibility gif",
+      "spiderman uncle ben",
       "settings-test",
       true,
     );
@@ -1639,6 +1639,7 @@ async function searchGiphy(settings, query, seedSource, preferTopResult = false)
   try {
     const results = [];
     const queries = buildGiphyQueryVariants(query);
+    let lastError = "";
     for (const itemQuery of queries) {
       const url = new URL("https://api.giphy.com/v1/gifs/search");
       url.searchParams.set("api_key", apiKey);
@@ -1648,8 +1649,15 @@ async function searchGiphy(settings, query, seedSource, preferTopResult = false)
       url.searchParams.set("lang", "en");
 
       const response = await fetch(url);
-      if (!response.ok) return { error: `GIPHY HTTP ${response.status}. Check that the key is valid.` };
+      if (!response.ok) {
+        lastError = `GIPHY HTTP ${response.status} for "${itemQuery}".`;
+        continue;
+      }
       const data = await response.json();
+      if (Number(data.meta?.status) >= 400) {
+        lastError = `GIPHY ${data.meta.status}: ${data.meta.msg || "Search failed"} for "${itemQuery}".`;
+        continue;
+      }
       const found = Array.isArray(data.data) ? data.data.filter((item) => item?.images) : [];
       if (found.length) {
         results.push(...found);
@@ -1657,7 +1665,7 @@ async function searchGiphy(settings, query, seedSource, preferTopResult = false)
       }
     }
 
-    if (!results.length) return { error: `No GIPHY results for "${query}".` };
+    if (!results.length) return { error: lastError || `No GIPHY results for "${query}".` };
 
     const index = preferTopResult ? 0 : hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
     const item = results[index];
@@ -1688,15 +1696,25 @@ function getClientApiKey(settingValue, envNames) {
 }
 
 function buildGiphyQueryVariants(query) {
-  const clean = String(query || "").trim();
+  const clean = sanitizeGiphyQuery(query);
   const variants = [clean];
   if (/spider[\s-]?man|uncle ben/i.test(clean)) {
-    variants.push("spider man responsibility gif", "spiderman uncle ben gif", "spider man quote gif");
+    variants.push("spiderman uncle ben", "spider man", "uncle ben");
   }
   if (/billy butcher|the boys|oi/i.test(clean)) {
-    variants.push("billy butcher gif", "the boys butcher reaction gif");
+    variants.push("billy butcher", "the boys butcher");
   }
-  return [...new Set(variants.filter(Boolean))];
+  return [...new Set(variants.map(sanitizeGiphyQuery).filter(Boolean))];
+}
+
+function sanitizeGiphyQuery(query) {
+  return String(query || "")
+    .replace(/\bgif\b/gi, "")
+    .replace(/[^\w\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 42)
+    .trim();
 }
 
 function pickRewardTheme(settings, seedSource) {
