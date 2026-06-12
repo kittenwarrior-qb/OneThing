@@ -20,6 +20,8 @@ import {
   Languages,
   ListChecks,
   Moon,
+  Pause,
+  Play,
   Plus,
   Save,
   Settings,
@@ -428,6 +430,11 @@ const copy = {
     addOpenRouterKeyStatus: "Add OpenRouter key in Settings first.",
     generatingTaskStatus: "Generating a stricter task...",
     cardsUnit: "cards",
+    pauseTimer: "Pause",
+    resumeTimer: "Resume",
+    timerDone: "Time's up!",
+    allDoneClaim: "Checklist done! Mint your card, then close the app.",
+    allDoneMinted: "Card minted. Close the app and keep studying.",
   },
   vi: {
     rescue: "hệ thống cứu focus cá nhân",
@@ -502,6 +509,11 @@ const copy = {
     addOpenRouterKeyStatus: "Thêm OpenRouter key trong Cài đặt trước.",
     generatingTaskStatus: "Đang tạo task chặt hơn...",
     cardsUnit: "thẻ",
+    pauseTimer: "Tạm dừng",
+    resumeTimer: "Tiếp tục",
+    timerDone: "Hết giờ!",
+    allDoneClaim: "Xong checklist! Mint thẻ rồi tắt app.",
+    allDoneMinted: "Đã mint thẻ. Đóng app và học tiếp.",
   },
 };
 
@@ -602,6 +614,7 @@ function App() {
   const [isPulling, setIsPulling] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isGeneratingTask, setIsGeneratingTask] = useState(false);
+  const [timer, setTimer] = useState({ running: false, remaining: null });
   const importRef = useRef(null);
   const lang = state.settings.language || "en";
   const t = copy[lang];
@@ -613,6 +626,18 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = state.settings.theme || "light";
   }, [state.settings.theme]);
+
+  useEffect(() => {
+    if (!timer.running || timer.remaining === null || timer.remaining <= 0) return;
+    const id = setTimeout(() => {
+      setTimer((prev) => ({ ...prev, remaining: prev.remaining - 1 }));
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [timer.running, timer.remaining]);
+
+  useEffect(() => {
+    setTimer({ running: false, remaining: null });
+  }, [state.today.lessonId]);
 
   const activePath = state.paths.find((path) => path.id === state.today.pathId) || state.paths[0];
   const activeLesson =
@@ -638,6 +663,19 @@ function App() {
   }, [activeLesson, isComplete, lang]);
 
   const updateState = (updater) => setState((current) => updater(structuredClone(current)));
+
+  const toggleTimer = () => {
+    if (timer.running) {
+      setTimer((prev) => ({ ...prev, running: false }));
+    } else if (timer.remaining !== null && timer.remaining > 0) {
+      setTimer((prev) => ({ ...prev, running: true }));
+    } else {
+      const mins = activeLesson?.minutes || state.settings.dailyMinutes || 70;
+      setTimer({ running: true, remaining: mins * 60 });
+    }
+  };
+
+  const resetTimer = () => setTimer({ running: false, remaining: null });
 
   const setTodayQuest = (pathId, lessonId) => {
     updateState((draft) => {
@@ -888,7 +926,12 @@ function App() {
               <Languages size={16} />
               {lang === "vi" ? "VI" : "EN"}
             </button>
-            <button className="gift-button" type="button" onClick={claimReward} disabled={!canClaim || isPulling}>
+            <button
+              className={`gift-button${canClaim && !isPulling ? " gift-button-ready" : ""}`}
+              type="button"
+              onClick={claimReward}
+              disabled={!canClaim || isPulling}
+            >
               {isPulling ? <span className="spinner-dot" /> : <Gift size={19} />}
               {canClaim && !isPulling && <span className="gift-badge" />}
             </button>
@@ -905,6 +948,9 @@ function App() {
               aria-current={activeTab === tab.key ? "page" : undefined}
             >
               <TabTitle icon={tab.icon} label={t[tab.labelKey]} />
+              {tab.key === "vault" && canClaim && !isPulling && (
+                <span className="nav-dot" aria-hidden="true" />
+              )}
             </button>
           ))}
         </nav>
@@ -957,14 +1003,31 @@ function App() {
                   ))}
                 </div>
 
+                {isComplete && (
+                  <motion.div
+                    className={state.today.rewardId ? "minted-banner" : "complete-banner"}
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <Check size={16} />
+                    <span>{state.today.rewardId ? t.allDoneMinted : t.allDoneClaim}</span>
+                  </motion.div>
+                )}
+
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button
-                    color="success"
+                    color={timer.running ? "default" : "success"}
                     size="lg"
                     radius="full"
-                    startContent={<TimerReset size={18} />}
+                    startContent={timer.running ? <Pause size={18} /> : <Play size={18} />}
+                    onPress={toggleTimer}
                   >
-                    {t.startFocus} {activeLesson?.minutes || state.settings.dailyMinutes}m
+                    {timer.running
+                      ? t.pauseTimer
+                      : timer.remaining !== null && timer.remaining > 0
+                        ? t.resumeTimer
+                        : `${t.startFocus} ${activeLesson?.minutes || state.settings.dailyMinutes}m`}
                   </Button>
                   <Button
                     size="lg"
@@ -989,12 +1052,34 @@ function App() {
                   </Button>
                 </div>
                 {aiStatus && <p className="text-sm text-[var(--muted)]">{aiStatus}</p>}
-                <div className="focus-inline">
-                  <div>
-                    <p className="mono-label text-[var(--rust)]">{t.focusSession}</p>
-                    <h3 className="text-xl font-semibold">{activeLesson?.minutes || state.settings.dailyMinutes}:00</h3>
+                <div className={`focus-inline${timer.running ? " focus-inline-running" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="mono-label text-[var(--rust)]">{t.focusSession}</p>
+                      <p
+                        className={`countdown-display${timer.running ? " running" : ""}${timer.remaining === 0 ? " done" : ""}`}
+                      >
+                        {timer.remaining !== null
+                          ? timer.remaining === 0
+                            ? t.timerDone
+                            : formatTime(timer.remaining)
+                          : `${String(activeLesson?.minutes || state.settings.dailyMinutes || 70).padStart(2, "0")}:00`}
+                      </p>
+                    </div>
+                    {timer.remaining !== null && (
+                      <button
+                        className="quick-button"
+                        type="button"
+                        onClick={resetTimer}
+                        aria-label="Reset timer"
+                        title="Reset timer"
+                        style={{ width: 36, height: 36, borderRadius: 10 }}
+                      >
+                        <TimerReset size={15} />
+                      </button>
+                    )}
                   </div>
-                  <p>{t.focusNote} {focusCopy}</p>
+                  <p className="flex-1 text-sm">{focusCopy}</p>
                 </div>
                 <textarea
                   className="plain-textarea"
@@ -1504,7 +1589,16 @@ function MonthGrid({ days }) {
   return (
     <div className="month-grid" aria-label="Monthly streak">
       {days.map((day) => (
-        <div className={day.completed ? "month-day month-day-done" : "month-day"} key={day.key}>
+        <div
+          className={[
+            "month-day",
+            day.completed ? "month-day-done" : "",
+            day.isToday && !day.completed ? "month-day-today" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          key={day.key}
+        >
           <span>{day.day}</span>
         </div>
       ))}
@@ -1544,6 +1638,7 @@ function computeStreak(history) {
 
 function getMonthDays(history) {
   const completedDays = new Set(Object.values(history).map((item) => item.completedAt?.slice(0, 10)).filter(Boolean));
+  const today = todayKey();
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -1551,7 +1646,7 @@ function getMonthDays(history) {
   return Array.from({ length: total }, (_, index) => {
     const date = new Date(year, month, index + 1);
     const key = date.toISOString().slice(0, 10);
-    return { key, day: index + 1, completed: completedDays.has(key) };
+    return { key, day: index + 1, completed: completedDays.has(key), isToday: key === today };
   });
 }
 
@@ -1966,6 +2061,12 @@ function hashSeed(value) {
 
 function createId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36)}`;
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 export default App;
