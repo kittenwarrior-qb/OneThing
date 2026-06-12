@@ -301,12 +301,12 @@ const rewardThemes = [
   {
     id: "the-boys",
     match: ["the boys", "billy butcher", "butcher", "oi oi oi"],
-    name: "Oi Oi Focus",
+    name: "Billy Butcher",
     type: "Reaction",
     line: "Oi. Back to work.",
     flavor: "Loud energy, tiny checklist.",
     art: "The Boys reaction source match",
-    imageQuery: "billy butcher the boys oi gif",
+    imageQuery: "billy butcher",
   },
   {
     id: "football",
@@ -316,7 +316,7 @@ const rewardThemes = [
     line: "One more win in the book.",
     flavor: "A card-pull celebration for showing up.",
     art: "Football celebration source match",
-    imageQuery: "football player celebration gif",
+    imageQuery: "football celebration",
   },
   {
     id: "anime",
@@ -326,7 +326,7 @@ const rewardThemes = [
     line: "Training arc continues.",
     flavor: "Small episode, real progress.",
     art: "Anime training reaction source match",
-    imageQuery: "anime training arc reaction gif",
+    imageQuery: "anime training",
   },
   {
     id: "genz",
@@ -336,7 +336,7 @@ const rewardThemes = [
     line: "Back before the scroll won.",
     flavor: "The timeline lost this round.",
     art: "Modern reaction source match",
-    imageQuery: "gen z reaction meme gif focus",
+    imageQuery: "gen z reaction",
   },
 ];
 
