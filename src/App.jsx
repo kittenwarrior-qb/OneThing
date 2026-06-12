@@ -435,6 +435,13 @@ const copy = {
     timerDone: "Time's up!",
     allDoneClaim: "Checklist done! Mint your card, then close the app.",
     allDoneMinted: "Card minted. Close the app and keep studying.",
+    mintedToday: "Already minted today",
+    minutesLabel: "Session length (min)",
+    expandLessons: "more lessons",
+    collapseLessons: "Show less",
+    pathCreated: "Path created. Starting first lesson now.",
+    pathNameRequired: "Enter a path name first.",
+    showAll: "Show all",
   },
   vi: {
     rescue: "hệ thống cứu focus cá nhân",
@@ -514,6 +521,13 @@ const copy = {
     timerDone: "Hết giờ!",
     allDoneClaim: "Xong checklist! Mint thẻ rồi tắt app.",
     allDoneMinted: "Đã mint thẻ. Đóng app và học tiếp.",
+    mintedToday: "Hôm nay đã mint rồi",
+    minutesLabel: "Thời gian học (phút)",
+    expandLessons: "lesson nữa",
+    collapseLessons: "Thu lại",
+    pathCreated: "Đã tạo path. Bắt đầu lesson đầu tiên.",
+    pathNameRequired: "Nhập tên path trước.",
+    showAll: "Xem tất cả",
   },
 };
 
@@ -615,6 +629,8 @@ function App() {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isGeneratingTask, setIsGeneratingTask] = useState(false);
   const [timer, setTimer] = useState({ running: false, remaining: null });
+  const [pathError, setPathError] = useState("");
+  const [expandedPaths, setExpandedPaths] = useState({});
   const importRef = useRef(null);
   const lang = state.settings.language || "en";
   const t = copy[lang];
@@ -646,7 +662,9 @@ function App() {
   const completedCount = checks.filter((_, index) => state.today.checked[index]).length;
   const progress = checks.length ? Math.round((completedCount / checks.length) * 100) : 0;
   const isComplete = checks.length > 0 && completedCount === checks.length;
-  const canClaim = isComplete && !state.today.rewardId;
+  const todayCardCount = state.collection.filter((c) => c.mintedAt?.slice(0, 10) === todayKey()).length;
+  const lessonAlreadyMinted = Boolean(state.history[activeLesson?.id]?.rewardId);
+  const canClaim = isComplete && !lessonAlreadyMinted && todayCardCount === 0;
   const streak = computeStreak(state.history);
   const monthDays = getMonthDays(state.history);
 
@@ -693,7 +711,7 @@ function App() {
   };
 
   const toggleCheck = (index) => {
-    if (!activeLesson || state.today.rewardId) return;
+    if (!activeLesson || state.history[activeLesson.id]?.rewardId) return;
     updateState((draft) => {
       draft.today.checked[index] = !draft.today.checked[index];
       return draft;
@@ -702,8 +720,8 @@ function App() {
 
   const claimReward = async () => {
     if (!canClaim || !activeLesson) return;
-    const alreadyCompleted = state.history[activeLesson.id]?.rewardId;
-    if (alreadyCompleted) return;
+    if (state.history[activeLesson.id]?.rewardId) return;
+    if (state.collection.some((c) => c.mintedAt?.slice(0, 10) === todayKey())) return;
     setIsPulling(true);
     setAiStatus(t.mintingStatus);
     try {
@@ -785,22 +803,40 @@ function App() {
   };
 
   const addPath = () => {
-    if (!newPath.title.trim()) return;
-    const lessons = buildLessonsFromToc(newPath.toc, Number(newPath.dailyMinutes) || 60);
+    if (!newPath.title.trim()) {
+      setPathError(t.pathNameRequired);
+      return;
+    }
+    const pathId = createId("path");
+    const mins = Number(newPath.dailyMinutes) || 60;
+    const lessons = buildLessonsFromToc(newPath.toc, mins);
     updateState((draft) => {
       draft.paths.unshift({
-        id: createId("path"),
+        id: pathId,
         title: newPath.title.trim(),
         source: newPath.source.trim() || "Personal path",
         imageUrl: newPath.imageUrl.trim(),
         tone: "primary",
-        dailyMinutes: Number(newPath.dailyMinutes) || 60,
+        dailyMinutes: mins,
         toc: newPath.toc,
         lessons,
       });
+      if (lessons.length > 0) {
+        draft.today = {
+          date: todayKey(),
+          pathId,
+          lessonId: lessons[0].id,
+          checked: {},
+          completedAt: "",
+          rewardId: "",
+        };
+      }
       return draft;
     });
     setNewPath({ title: "", source: "", imageUrl: "", toc: "", dailyMinutes: 60 });
+    setPathError("");
+    setAiStatus(t.pathCreated);
+    setActiveTab("today");
   };
 
   const generateLessonWithOpenRouter = async () => {
@@ -994,7 +1030,7 @@ function App() {
                         isSelected={Boolean(state.today.checked[index])}
                         color="success"
                         radius="full"
-                        isDisabled={Boolean(state.today.rewardId)}
+                        isDisabled={Boolean(state.history[activeLesson?.id]?.rewardId)}
                         onValueChange={() => toggleCheck(index)}
                       />
                       <span>{task}</span>
@@ -1005,13 +1041,13 @@ function App() {
 
                 {isComplete && (
                   <motion.div
-                    className={state.today.rewardId ? "minted-banner" : "complete-banner"}
+                    className={lessonAlreadyMinted || todayCardCount > 0 ? "minted-banner" : "complete-banner"}
                     initial={{ opacity: 0, y: 8, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <Check size={16} />
-                    <span>{state.today.rewardId ? t.allDoneMinted : t.allDoneClaim}</span>
+                    <span>{lessonAlreadyMinted || todayCardCount > 0 ? t.allDoneMinted : t.allDoneClaim}</span>
                   </motion.div>
                 )}
 
@@ -1038,7 +1074,7 @@ function App() {
                     isDisabled={!canClaim || isPulling}
                     onPress={claimReward}
                   >
-                    {isPulling ? t.minting : canClaim ? t.openGacha : state.today.rewardId ? t.minted : t.finishFirst}
+                    {isPulling ? t.minting : canClaim ? t.openGacha : todayCardCount > 0 ? t.mintedToday : t.finishFirst}
                   </Button>
                   <Button
                     size="lg"
@@ -1169,20 +1205,35 @@ function App() {
                         </div>
                       </div>
                       <div className="grid gap-2">
-                        {path.lessons.slice(0, 4).map((lesson) => (
-                          <motion.button
-                            className="lesson-row"
-                            key={lesson.id}
-                            onClick={() => setTodayQuest(path.id, lesson.id)}
-                            whileHover={{ y: -1 }}
-                            whileTap={{ scale: 0.992 }}
+                        {(expandedPaths[path.id] ? path.lessons : path.lessons.slice(0, 4)).map((lesson) => {
+                          const done = Boolean(state.history[lesson.id]?.completedAt);
+                          const isActive = state.today.lessonId === lesson.id;
+                          return (
+                            <motion.button
+                              className={`lesson-row${done ? " lesson-row-done" : ""}${isActive ? " lesson-row-active" : ""}`}
+                              key={lesson.id}
+                              onClick={() => setTodayQuest(path.id, lesson.id)}
+                              whileHover={{ y: done ? 0 : -1 }}
+                              whileTap={{ scale: 0.992 }}
+                            >
+                              <span className={done ? "line-through opacity-60" : ""}>{lesson.title}</span>
+                              <Chip size="sm" variant="flat" color={done ? "success" : isActive ? "primary" : "default"}>
+                                {done ? "✓" : isActive ? (lang === "vi" ? "đang học" : "active") : `${lesson.minutes}m`}
+                              </Chip>
+                            </motion.button>
+                          );
+                        })}
+                        {path.lessons.length > 4 && (
+                          <button
+                            className="lesson-row-more"
+                            type="button"
+                            onClick={() => setExpandedPaths((prev) => ({ ...prev, [path.id]: !prev[path.id] }))}
                           >
-                            <span>{lesson.title}</span>
-                            <Chip size="sm" variant="flat">
-                              {state.history[lesson.id]?.completedAt ? "done" : `${lesson.minutes}m`}
-                            </Chip>
-                          </motion.button>
-                        ))}
+                            {expandedPaths[path.id]
+                              ? t.collapseLessons
+                              : `+${path.lessons.length - 4} ${t.expandLessons}`}
+                          </button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1197,11 +1248,15 @@ function App() {
                 <p className="mono-label text-[var(--rust)]">{t.addPath}</p>
                 <h2 className="serif-title text-3xl font-semibold">{t.pathTitle}</h2>
                 <input
-                  className="plain-input"
+                  className={`plain-input${pathError ? " input-error" : ""}`}
                   placeholder={t.pathName}
                   value={newPath.title}
-                  onChange={(event) => setNewPath({ ...newPath, title: event.target.value })}
+                  onChange={(event) => {
+                    setNewPath({ ...newPath, title: event.target.value });
+                    if (pathError) setPathError("");
+                  }}
                 />
+                {pathError && <p className="path-error-msg">{pathError}</p>}
                 <input
                   className="plain-input"
                   placeholder={t.source}
@@ -1214,9 +1269,21 @@ function App() {
                   value={newPath.imageUrl}
                   onChange={(event) => setNewPath({ ...newPath, imageUrl: event.target.value })}
                 />
+                <div>
+                  <label className="field-label">{t.minutesLabel}</label>
+                  <input
+                    className="plain-input"
+                    type="number"
+                    min="15"
+                    max="240"
+                    style={{ marginTop: 8 }}
+                    value={newPath.dailyMinutes}
+                    onChange={(event) => setNewPath({ ...newPath, dailyMinutes: event.target.value })}
+                  />
+                </div>
                 <textarea
                   className="plain-textarea"
-                  rows={8}
+                  rows={7}
                   placeholder={t.toc}
                   value={newPath.toc}
                   onChange={(event) => setNewPath({ ...newPath, toc: event.target.value })}

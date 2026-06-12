@@ -876,6 +876,56 @@ body {
   box-shadow: 0 8px 18px rgba(16, 185, 129, 0.2);
 }
 
+/* ── Lesson row states ── */
+.lesson-row-done {
+  opacity: 0.7;
+  border-color: rgba(16, 185, 129, 0.28);
+  background: color-mix(in srgb, #10b981 6%, var(--surface));
+  cursor: default;
+}
+
+.lesson-row-active {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: color-mix(in srgb, #3b82f6 6%, var(--surface));
+}
+
+/* ── Expand/collapse button ── */
+.lesson-row-more {
+  display: flex;
+  min-height: 38px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: transparent;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.lesson-row-more:hover {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+/* ── Path form validation ── */
+.input-error {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.path-error-msg {
+  margin: -8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
 /* ── Position relative for vault badge dot ── */
 .segmented-item {
   position: relative;
