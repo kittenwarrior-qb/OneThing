@@ -1442,7 +1442,7 @@ function CollectibleCard({ card, rewardLabel = "OneThing reward" }) {
       </div>
       <div className="collect-title-strip">
         <h3>{card.name}</h3>
-        <p>{card.type} / {card.imageName || card.art}</p>
+        <p>{card.type}</p>
       </div>
       <div className="collect-card-foot">{rewardLabel}</div>
     </motion.article>
@@ -1670,8 +1670,11 @@ async function searchGiphy(settings, query, seedSource, preferTopResult = false)
     const index = preferTopResult ? 0 : hashSeed(String(seedSource || query)) % Math.min(results.length, 8);
     const item = results[index];
     const image =
-      item.images.downsized_large?.url ||
-      item.images.downsized_medium?.url ||
+      item.images.original_still?.url ||
+      item.images.downsized_still?.url ||
+      item.images.fixed_height_still?.url ||
+      item.images.fixed_width_still?.url ||
+      item.images.preview_gif?.url ||
       item.images.original?.webp ||
       item.images.original?.url;
     if (!image) return { error: "GIPHY result had no usable image URL." };

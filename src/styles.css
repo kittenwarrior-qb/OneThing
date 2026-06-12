@@ -429,14 +429,12 @@ body {
 
 .collect-card {
   position: relative;
-  display: flex;
+  display: grid;
   isolation: isolate;
   width: 100%;
   max-width: 320px;
   aspect-ratio: 5 / 7;
   min-height: 0;
-  flex-direction: column;
-  justify-content: space-between;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 24px;
@@ -558,7 +556,7 @@ body {
 
 .collect-card-top,
 .collect-card-foot {
-  position: relative;
+  position: absolute;
   z-index: 3;
   display: flex;
   justify-content: space-between;
@@ -571,24 +569,29 @@ body {
 }
 
 .collect-card-top {
-  padding: 14px 18px 8px;
+  top: 0;
+  right: 0;
+  left: 0;
+  padding: 18px 22px 8px;
 }
 
 .collect-card-foot {
-  padding: 0 18px 16px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 0 22px 18px;
 }
 
 .collect-card-art {
-  position: relative;
+  position: absolute;
+  inset: 10px;
   z-index: 1;
   display: grid;
-  width: calc(100% - 36px);
-  flex: 1;
+  width: auto;
   min-height: 0;
   place-items: center;
-  align-self: center;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
+  border-radius: 20px;
   background: rgba(0, 0, 0, 0.16);
   overflow: hidden;
 }
@@ -609,7 +612,7 @@ body {
 
 .collect-card[data-visual-source="sticker"] .collect-card-image {
   object-fit: contain;
-  padding: 8px;
+  padding: 28px;
 }
 
 .collect-fallback-art {
@@ -671,10 +674,10 @@ body {
   position: absolute;
   z-index: 2;
   right: 0;
-  bottom: 0;
+  bottom: 118px;
   left: 0;
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
-  padding: 54px 16px 16px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.68));
+  padding: 80px 22px 16px;
   color: #fffdf8;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
@@ -687,14 +690,16 @@ body {
 }
 
 .collect-title-strip {
-  position: relative;
+  position: absolute;
   z-index: 3;
-  margin: 10px 18px 10px;
+  right: 22px;
+  bottom: 46px;
+  left: 22px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.34);
-  padding: 10px 12px;
-  backdrop-filter: blur(14px);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.78));
+  padding: 12px 14px;
+  backdrop-filter: blur(16px);
 }
 
 .collect-title-strip h3 {
